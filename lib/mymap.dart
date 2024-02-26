@@ -3,18 +3,21 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:async';
-import 'navbar.dart' as CustomNavBar;
+import 'navbar.dart'
+    as CustomNavBar; // Import the custom navbar.dart file with an alias
 
-class CustomMap extends StatefulWidget {
+class MyMap extends StatefulWidget {
   @override
-  _CustomMapState createState() => _CustomMapState();
+  _MyMapState createState() => _MyMapState();
 }
 
-class _CustomMapState extends State<CustomMap> {
+class _MyMapState extends State<MyMap> {
   late latLng.LatLng _center;
   late latLng.LatLng _userCenter;
-  late double later;
-  late double lnger;
+  late double mapLat;
+  late double mapLng;
+  late double userLat;
+  late double userLng;
   late double _zoom;
   late MapController _mapController;
   bool _fieldsVisible = true;
@@ -35,8 +38,10 @@ class _CustomMapState extends State<CustomMap> {
     _center = latLng.LatLng(start_lat, start_lng);
     _userCenter = latLng.LatLng(start_lat, start_lng);
     _mapController = MapController();
-    later = start_lat;
-    lnger = start_lng;
+    mapLat = start_lat;
+    mapLng = start_lng;
+    userLat = start_lat;
+    userLng = start_lng;
     _zoom = start_zoom;
     _direction = 0;
     // Set initial values for text field controllers
@@ -57,28 +62,25 @@ class _CustomMapState extends State<CustomMap> {
   }
 
   void moveCenter() {
-    _mapController.move(latLng.LatLng(later, lnger), _zoom);
+    _mapController.move(latLng.LatLng(mapLat, mapLng), _zoom);
     print("current direction: $_direction");
   }
 
-  void moveUser() {
+  void moveUser(newLat, newLng) {
     setState(() {
-      _userCenter = latLng.LatLng(later, lnger);
+      userLat = newLat;
+      userLng = newLng;
+      _userCenter = latLng.LatLng(userLat, userLng);
     });
   }
 
-  void _updateCenter(String lat, String lng) {
-    setState(() {
-      _center = latLng.LatLng(double.parse(lat), double.parse(lng));
-      later = double.parse(lat);
-      lnger = double.parse(lng);
-    });
-  }
+  // void updateUser(newLat, newLng) {
+  //   moveUser(newLat, newLng);
+  //   focusUser();
+  // }
 
-  void _updateZoom(String zoom) {
-    setState(() {
-      _zoom = double.parse(zoom);
-    });
+  void focusUser() {
+    _mapController.move(latLng.LatLng(userLat, userLng), 21.5);
   }
 
   void moveToLocation(double lat, double lon, double zoom) {
@@ -95,57 +97,10 @@ class _CustomMapState extends State<CustomMap> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Sandbox'),
+          title: Text('My Map'),
         ),
         body: Column(
           children: [
-            if (_fieldsVisible)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Opacity(
-                  opacity: 0.5, // Set opacity here
-                  child: TextFormField(
-                    controller: _latitudeController,
-                    decoration: InputDecoration(
-                      labelText: 'Latitude',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) =>
-                        _updateCenter(value, _longitudeController.text),
-                  ),
-                ),
-              ),
-            if (_fieldsVisible)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Opacity(
-                  opacity: 0.5, // Set opacity here
-                  child: TextFormField(
-                    controller: _longitudeController,
-                    decoration: InputDecoration(
-                      labelText: 'Longitude',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) =>
-                        _updateCenter(_latitudeController.text, value),
-                  ),
-                ),
-              ),
-            if (_fieldsVisible)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Opacity(
-                  opacity: 0.5, // Set opacity here
-                  child: TextFormField(
-                    controller: _zoomController,
-                    decoration: InputDecoration(
-                      labelText: 'Zoom Level',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) => _updateZoom(value),
-                  ),
-                ),
-              ),
             Expanded(
               child: FlutterMap(
                 options: MapOptions(
@@ -193,38 +148,16 @@ class _CustomMapState extends State<CustomMap> {
           children: [
             FloatingActionButton(
               onPressed: () {
-                moveCenter();
+                focusUser();
               },
-              tooltip: 'Move to Location',
+              tooltip: 'Focus Center',
               child: Icon(Icons.location_searching),
-            ),
-            SizedBox(height: 16),
-            FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  _fieldsVisible = !_fieldsVisible;
-                });
-              },
-              tooltip: _fieldsVisible ? 'Hide Fields' : 'Show Fields',
-              child:
-                  // Icon(_fieldsVisible ? Icons.visibility_off : Icons.visibility),
-                  Icon(_fieldsVisible
-                      ? Icons.keyboard_hide_rounded
-                      : Icons.keyboard_rounded),
-            ),
-            SizedBox(height: 16),
-            FloatingActionButton(
-              onPressed: () {
-                moveUser();
-              },
-              tooltip: 'Move User',
-              child: Icon(Icons.location_pin),
             ),
           ],
         ),
         bottomNavigationBar: CustomNavBar.NavigationBar(
           currentIndex:
-              2, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
+              0, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
         ));
   }
 
@@ -241,6 +174,6 @@ class _CustomMapState extends State<CustomMap> {
 
 void main() {
   runApp(MaterialApp(
-    home: CustomMap(),
+    home: MyMap(),
   ));
 }
