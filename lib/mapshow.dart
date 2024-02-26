@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latLng;
+import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:async';
-import 'dart:math';
-import 'package:sensors/sensors.dart';
 
 class CustomMap extends StatefulWidget {
   @override
@@ -18,12 +17,11 @@ class _CustomMapState extends State<CustomMap> {
   late MapController _mapController;
   bool _fieldsVisible = true;
   late double _direction; // Direction for the marker rotation
-  late StreamSubscription _accelerometerSubscription;
-  late StreamSubscription _gyroscopeSubscription;
 
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _zoomController = TextEditingController();
+  StreamSubscription<CompassEvent>? _compassSubscription;
 
   @override
   void initState() {
@@ -37,38 +35,27 @@ class _CustomMapState extends State<CustomMap> {
     later = start_lat;
     lnger = start_lng;
     _zoom = start_zoom;
+    _direction = 0;
     // Set initial values for text field controllers
     _latitudeController.text = _center.latitude.toString();
     _longitudeController.text = _center.longitude.toString();
     _zoomController.text = _zoom.toString();
-    _initializeSensors();
+    _initializeCompass();
   }
 
-  void _initializeSensors() {
-    _accelerometerSubscription =
-        accelerometerEvents.listen((AccelerometerEvent event) {
-      // Calculate the direction based on accelerometer data
-      double x = event.x;
-      double y = event.y;
-      double z = event.z;
-
-      double direction = -1 * (180 / 3.14) * atan(y / sqrt(x * x + z * z));
-
-      setState(() {
-        _direction = direction;
-      });
-    });
-
-    _gyroscopeSubscription = gyroscopeEvents.listen((GyroscopeEvent event) {
-      // Optionally, you can use gyroscope data for more accurate direction calculation
-      // double x = event.x;
-      // double y = event.y;
-      // double z = event.z;
+  void _initializeCompass() {
+    _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
+      if (mounted) {
+        setState(() {
+          _direction = event.heading ?? 0.0;
+        });
+      }
     });
   }
 
   void moveCenter() {
     _mapController.move(latLng.LatLng(later, lnger), _zoom);
+    print("current direction: $_direction");
   }
 
   void _updateCenter(String lat, String lng) {
@@ -170,16 +157,16 @@ class _CustomMapState extends State<CustomMap> {
                   markers: [
                     Marker(
                       point: _center,
-                      width: 80.0,
-                      height: 80.0,
+                      width: 50.0,
+                      height: 50.0,
                       rotate: true, // Rotate the marker based on direction
                       alignment: Alignment.center,
                       child: Transform.rotate(
-                        angle: _direction *
-                            (pi / 180), // Convert degrees to radians
+                        angle:
+                            -_direction, // Rotate the arrow based on compass heading
                         child: Icon(
-                          Icons.arrow_upward,
-                          size: 80.0,
+                          Icons.arrow_circle_up_rounded,
+                          size: 50.0,
                           color: Colors.blue,
                         ),
                       ),
@@ -218,32 +205,10 @@ class _CustomMapState extends State<CustomMap> {
     );
   }
 
-  Marker rotateMarker(double rotation) {
-    // return Marker(
-    //   width: 80.0,
-    //   height: 80.0,
-    //   point: _center,
-    //   builder: (ctx) => Transform.rotate(
-    //     angle: rotation * (3.14 / 180), // Convert to radians for rotation
-    //     child: Icon(
-    //       Icons.arrow_upward,
-    //       size: 80.0,
-    //       color: Colors.blue,
-    //     ),
-    //   ),
-    // );
-    return Marker(
-      point:
-          latLng.LatLng(13.72765, 100.772435), // Provide the LatLng coordinates
-      child: Icon(Icons.location_pin), // Provide a child widget (e.g., an icon)
-    );
-  }
-
   @override
   void dispose() {
     // Dispose text field controllers
-    _accelerometerSubscription.cancel();
-    _gyroscopeSubscription.cancel();
+    _compassSubscription?.cancel();
     _latitudeController.dispose();
     _longitudeController.dispose();
     _zoomController.dispose();
