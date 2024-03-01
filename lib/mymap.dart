@@ -1,8 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/io_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:wifi_scan/wifi_scan.dart';
+import 'package:http/http.dart' as http;
+import 'authenpage.dart';
+import 'package:intl/intl.dart';
+
+import 'package:wifi_hunter/wifi_hunter.dart';
+import 'package:wifi_hunter/wifi_hunter_result.dart';
 import 'navbar.dart'
     as CustomNavBar; // Import the custom navbar.dart file with an alias
 
@@ -12,6 +23,15 @@ class MyMap extends StatefulWidget {
 }
 
 class _MyMapState extends State<MyMap> {
+  WiFiHunterResult wiFiHunterResult = WiFiHunterResult();
+  bool isWiFiScanInProgress = false;
+  bool isWiFiScanned = false;
+  int xinterval = 1;
+  int xtimer = 15;
+  var scannedArray = [];
+  List<Map<String, dynamic>> newAP = [];
+  List<WiFiAccessPoint> accessPoints = <WiFiAccessPoint>[];
+  bool shouldCheckCan = true;
   late latLng.LatLng _center;
   late latLng.LatLng _userCenter;
   late double mapLat;
@@ -20,7 +40,6 @@ class _MyMapState extends State<MyMap> {
   late double userLng;
   late double _zoom;
   late MapController _mapController;
-  bool _fieldsVisible = true;
   late double _direction; // Direction for the marker rotation
 
   final TextEditingController _latitudeController = TextEditingController();
@@ -31,6 +50,7 @@ class _MyMapState extends State<MyMap> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     // Initial center coordinates and zoom level
     const start_lat = 13.72765;
     const start_lng = 100.772435;
@@ -49,6 +69,301 @@ class _MyMapState extends State<MyMap> {
     _longitudeController.text = _center.longitude.toString();
     _zoomController.text = _zoom.toString();
     _initializeCompass();
+    keepUpdateCoordinate();
+  }
+
+  // Function to check login status
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? accessToken = prefs.getString('accessToken');
+    String? idToken = prefs.getString('idToken');
+    if (accessToken != null && idToken != null) {
+      // Token exists, proceed to verify the token
+      await _verifyToken(accessToken);
+    } else {
+      // If tokens are not available, navigate back to the authentication page
+      print("token failed 1");
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => AuthenPage(),
+          transitionDuration: Duration(seconds: 0),
+        ),
+      );
+    }
+  }
+
+// Function to verify the token by fetching user info
+  Future<void> _verifyToken(String accessToken) async {
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('https://authentik.cie-ips.com/application/o/userinfo/'),
+        headers: <String, String>{
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+      print("respy");
+      print(response);
+      if (response.statusCode != 200) {
+        // Token is not valid, navigate back to the authentication page
+        print("token failed 2");
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => AuthenPage(),
+            transitionDuration: Duration(seconds: 0),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error verifying token: $e');
+      // Navigate back to the authentication page in case of any errors
+      print("token failed 3");
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => AuthenPage(),
+          transitionDuration: Duration(seconds: 0),
+        ),
+      );
+    }
+  }
+
+  Future<void> collectPositionData(
+      poll_rate, duration, toast, stage, start, mode) async {
+    //final apiUrl = 'http://172.20.10.6:8080/api/v1/rssi/collectdata';
+    final apiUrl = 'https://bff-api.cie.com/api/v1/rssi/collectdata';
+    //cie 10.0.9.6
+
+    final jsonData = {
+      'Signals': newAP,
+      'Duration': duration,
+      'stat_collection_stage': stage,
+      'Started_At': start,
+      'Ended_At': formatNewDate(DateTime.now()),
+      'Created_At': formatNewDate(DateTime.now()),
+      'Polling_Rate': poll_rate,
+    };
+
+    final headers = {
+      // 'X-Device-ID': deviceId,
+      // 'X-Device-Model': deviceModel,
+      'Content-Type': 'application/json',
+    };
+    print("body obj");
+    print(jsonData);
+    if (!isWiFiScanned) {
+      print("not send data because scan not complete");
+
+      isWiFiScanned = false;
+
+      return;
+    }
+
+    try {
+      final ioClient = HttpClient()
+        ..badCertificateCallback =
+            ((X509Certificate cert, String host, int port) => true);
+      final http.Client xclient = IOClient(ioClient);
+      //final response = await http.post(
+      final response = await xclient.post(
+        Uri.parse(apiUrl),
+        headers: headers,
+        body: jsonEncode(jsonData),
+      );
+      print("status code: $response.statusCode");
+      if (response.statusCode == 200) {
+        print('Request successful: ${response.body}');
+        var desc = "SUCCESS NULL DESC";
+
+        // if (toast < 0) {
+        //   toastWithVibrate("Single Sent");
+        // }
+        // Show "Sent" toast on success
+        //clearCoordinateForm(); // Clear entry boxes on success
+      } else {
+        print('Request failed with status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
+
+    //newAP = [];
+  }
+
+  Future<void> huntWiFis() async {
+    try {
+      // Check if WiFi scan is already in progress
+      if (isWiFiScanInProgress) {
+        print("WiFi scan is already in progress. Skipping...");
+        //toastWithVibrate("WiFi scan is already in progress. Skipping...");
+        return;
+      }
+
+      // Set the WiFi scan flag to indicate that a scan is in progress
+      isWiFiScanInProgress = true;
+
+      print("Start hunting...");
+
+      // Set a timeout for the WiFi scan operation (e.g., 10 seconds)
+      if (xinterval <= 1) {
+        xinterval = 3;
+      }
+      final timeoutDuration = Duration(seconds: xinterval);
+
+      // Start the WiFi scan
+      final wifiScanFuture =
+          WiFiHunter.huntWiFiNetworksWithTimeout(xinterval + 1);
+
+      // Create a delayed Future to handle the timeout
+      final timeoutFuture = Future.delayed(timeoutDuration, () {
+        // Set the WiFi scan flag to indicate that the scan has timed out
+        isWiFiScanInProgress = false;
+        if (!isWiFiScanned) {
+          // scan time out
+        }
+
+        throw TimeoutException('WiFi scan timed out');
+      });
+
+      // Wait for either the WiFi scan to complete or the timeout to occur
+      await Future.any([wifiScanFuture, timeoutFuture]).then((result) {
+        // Handle the result (it could be either WiFi scan result or TimeoutException)
+        if (result is WiFiHunterResult) {
+          wiFiHunterResult = result;
+          print("scannedArray: $scannedArray");
+          //showToast("WiFi scan completed");
+          isWiFiScanned = true;
+          if (scannedArray.isNotEmpty) {
+            scannedArray[scannedArray.length - 1] = true;
+          }
+
+          print("Done hunting!");
+        }
+      }).catchError((error) {
+        // Handle other errors during WiFi scan
+        if (error is TimeoutException) {
+          // Ignore the timeout error here since it has been handled above
+        } else {
+          // Handle other errors
+          //toastWithVibrate("WiFi scan encountered an error: $error");
+          print("WiFi scan error: $error");
+        }
+      }).whenComplete(() {
+        // Set the WiFi scan flag to indicate that the scan is no longer in progress
+        isWiFiScanInProgress = false;
+      });
+
+      //toastWithVibrate("DONE HUNTING");
+      print("Done hunting 2");
+    } catch (exception) {
+      // Handle unexpected exceptions
+      //toastWithVibrate("An unexpected error occurred: $exception");
+      print("Unexpected error during WiFi scan: $exception");
+    }
+  }
+
+  Future<bool> _wifiCanGetScannedResults() async {
+    if (shouldCheckCan) {
+      final can = await WiFiScan.instance.canGetScannedResults();
+      if (can != CanGetScannedResults.yes) {
+        //log("Cannot get scanned results: $can");
+        accessPoints = <WiFiAccessPoint>[];
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<bool> _wifiGetResultsInJsonForm() async {
+    if (await _wifiCanGetScannedResults()) {
+      final results = await WiFiScan.instance.getScannedResults();
+      accessPoints = results;
+      return true;
+    } else {
+      accessPoints = <WiFiAccessPoint>[];
+      return false;
+    }
+  }
+
+  String formatNewDate(DateTime dateTime) {
+    // Format the DateTime using the desired format
+    String formattedDate = DateFormat("yyyy-MM-ddTHH:mm:ss").format(dateTime);
+
+    // Get the timezone offset
+    String timezoneOffset = getTimezoneOffset(dateTime);
+
+    // Combine the formatted date and timezone offset
+    return '$formattedDate$timezoneOffset';
+  }
+
+  String getTimezoneOffset(DateTime dateTime) {
+    // Get the timezone offset in minutes
+    int offsetMinutes = dateTime.timeZoneOffset.inMinutes;
+
+    // Calculate the offset in hours and minutes
+    int hours = offsetMinutes ~/ 60;
+    int minutes = offsetMinutes % 60;
+
+    // Format the offset as "+HH:mm" or "-HH:mm"
+    String formattedOffset =
+        '${hours.abs().toString().padLeft(2, '0')}:${minutes.abs().toString().padLeft(2, '0')}';
+
+    // Determine the sign of the offset
+    String sign = offsetMinutes >= 0 ? '+' : '-';
+
+    return '$sign$formattedOffset';
+  }
+
+  void addNewStrength(String ssid, String bssid, double level) {
+    print("current AP: ");
+    //print(newAP);
+    for (int i = 0; i < newAP.length; i++) {
+      if (newAP[i]['mac_address'] == bssid) {
+        newAP[i]['Strength'].add(level);
+        newAP[i]['created_at'].add(formatNewDate(DateTime.now()));
+        return;
+      }
+    }
+
+    // If BSSID not found, add a new entry
+    newAP.add({
+      'Ssid': ssid,
+      'mac_address': bssid,
+      'Strength': [level.toDouble()],
+      'created_at': [formatNewDate(DateTime.now())]
+    });
+  }
+
+  Future updateAP() async {
+    print("start hunting");
+    await huntWiFis();
+    print("hunted");
+    if (await _wifiGetResultsInJsonForm()) {
+      print("accespoints: ");
+      //print(accessPoints);
+      for (int i = 0; i < accessPoints.length; i++) {
+        addNewStrength(accessPoints[i].ssid, accessPoints[i].bssid,
+            accessPoints[i].level.toDouble());
+      }
+      print("updated new ap info");
+    }
+  }
+
+  Future<void> getCoordinate() async {
+    print("Sending");
+    await updateAP();
+    await collectPositionData(
+        0, -1, -1, 'SINGLE', formatNewDate(DateTime.now()), "SINGLE");
+    newAP = [];
+    accessPoints = [];
+  }
+
+  void keepUpdateCoordinate() {
+    Timer.periodic(Duration(seconds: xinterval), (timer) {
+      //getCoordinate();
+    });
   }
 
   void _initializeCompass() {

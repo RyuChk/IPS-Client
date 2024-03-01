@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:async';
 import 'navbar.dart' as CustomNavBar;
+import 'dart:math';
 
 class AdminMap extends StatefulWidget {
   @override
@@ -42,6 +43,33 @@ class _AdminMapState extends State<AdminMap> {
     _latitudeController.text = _center.latitude.toString();
     _longitudeController.text = _center.longitude.toString();
     _zoomController.text = _zoom.toString();
+    initScanUser();
+    keepUpdateUserCoordinate();
+  }
+
+  void keepUpdateUserCoordinate() {
+    List<List<dynamic>> _userList = [
+      ['John', 13.72765, 100.772435],
+      ['Jane', 13.72770, 100.772490],
+      ['Doe', 13.72780, 100.772400],
+    ];
+    Timer.periodic(Duration(seconds: 4), (timer) {
+      //getCoordinate();
+
+      _userList.forEach((user) {
+        // Generate random latitude and longitude variations within the specified range
+        double latVariation = (Random().nextDouble() * 2 - 1) * 0.00002;
+        double lngVariation = (Random().nextDouble() * 2 - 1) * 0.00002;
+
+        // Apply the variations to the initial latitude and longitude
+        user[1] += latVariation;
+        user[2] += lngVariation;
+      });
+      setState(() {
+        userList = _userList;
+      });
+      searchUsers();
+    });
   }
 
   void moveCenter() {
@@ -76,14 +104,21 @@ class _AdminMapState extends State<AdminMap> {
             Icon(
               Icons.person_rounded,
               size: 50.0,
-              color: Color.fromARGB(255, 255, 255, 255),
+              color: Colors.white, // Set the icon color to white
             ),
-            Text(user), // Add a label with the user name
+            Text(
+              user,
+              style: TextStyle(
+                color: Colors.white, // Set the text color to white
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
+  void initScanUser() {}
 
   void searchUsers() {
     // Fetch users based on selected building and floor
