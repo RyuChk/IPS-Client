@@ -121,15 +121,6 @@ class _AdminMapState extends State<AdminMap> {
   void initScanUser() {}
 
   void searchUsers() {
-    // Fetch users based on selected building and floor
-    // Populate userList with fetched user data
-    // Example:
-    // userList = [
-    //   ['John', 13.72765, 100.772435],
-    //   ['Jane', 13.72770, 100.772490],
-    //   ['Doe', 13.72780, 100.772400],
-    // ];
-    // Then generate markers for each user
     setState(() {
       markerList.clear(); // Clear existing markers
       for (var user in userList) {

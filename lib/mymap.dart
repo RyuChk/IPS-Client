@@ -11,6 +11,7 @@ import 'package:wifi_scan/wifi_scan.dart';
 import 'package:http/http.dart' as http;
 import 'authenpage.dart';
 import 'package:intl/intl.dart';
+import 'package:device_info/device_info.dart';
 
 import 'package:wifi_hunter/wifi_hunter.dart';
 import 'package:wifi_hunter/wifi_hunter_result.dart';
@@ -40,6 +41,7 @@ class _MyMapState extends State<MyMap> {
   late double userLng;
   late double _zoom;
   late MapController _mapController;
+  late WebSocket _socket;
   late double _direction; // Direction for the marker rotation
 
   final TextEditingController _latitudeController = TextEditingController();
@@ -93,6 +95,16 @@ class _MyMapState extends State<MyMap> {
     }
   }
 
+  void _initializeWebSocket() async {
+    try {
+      // Replace 'ws://your_server_ip:port' with your WebSocket server URL
+      _socket = await WebSocket.connect('ws://your_server_ip:port');
+      print('WebSocket connected');
+    } catch (e) {
+      print('Error connecting to WebSocket: $e');
+    }
+  }
+
 // Function to verify the token by fetching user info
   Future<void> _verifyToken(String accessToken) async {
     try {
@@ -129,25 +141,37 @@ class _MyMapState extends State<MyMap> {
     }
   }
 
-  Future<void> collectPositionData(
-      poll_rate, duration, toast, stage, start, mode) async {
+  Future<List<String>> getDeviceInfo() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    AndroidDeviceInfo? androidInfo; // Use nullable type
+
+    try {
+      androidInfo = await deviceInfo.androidInfo;
+    } catch (e) {
+      print('Error getting Android device info: $e');
+    }
+
+    final deviceId = androidInfo?.androidId ?? 'UNKNOWN';
+    final deviceModel = androidInfo?.model ?? 'UNKNOWN';
+
+    return [deviceId, deviceModel];
+  }
+
+  Future<void> collectPositionData() async {
     //final apiUrl = 'http://172.20.10.6:8080/api/v1/rssi/collectdata';
-    final apiUrl = 'https://bff-api.cie.com/api/v1/rssi/collectdata';
+    final apiUrl = 'https://bff-api.cie-ips.com/api/v1/user/ws';
     //cie 10.0.9.6
 
     final jsonData = {
       'Signals': newAP,
-      'Duration': duration,
-      'stat_collection_stage': stage,
-      'Started_At': start,
-      'Ended_At': formatNewDate(DateTime.now()),
-      'Created_At': formatNewDate(DateTime.now()),
-      'Polling_Rate': poll_rate,
     };
+    List<String> deviceInfo = await getDeviceInfo();
+    String deviceId = deviceInfo[0];
+    String deviceModel = deviceInfo[1];
 
     final headers = {
-      // 'X-Device-ID': deviceId,
-      // 'X-Device-Model': deviceModel,
+      'X-Device-ID': deviceId,
+      'X-Device-Model': deviceModel,
       'Content-Type': 'application/json',
     };
     print("body obj");
@@ -160,34 +184,8 @@ class _MyMapState extends State<MyMap> {
       return;
     }
 
-    try {
-      final ioClient = HttpClient()
-        ..badCertificateCallback =
-            ((X509Certificate cert, String host, int port) => true);
-      final http.Client xclient = IOClient(ioClient);
-      //final response = await http.post(
-      final response = await xclient.post(
-        Uri.parse(apiUrl),
-        headers: headers,
-        body: jsonEncode(jsonData),
-      );
-      print("status code: $response.statusCode");
-      if (response.statusCode == 200) {
-        print('Request successful: ${response.body}');
-        var desc = "SUCCESS NULL DESC";
-
-        // if (toast < 0) {
-        //   toastWithVibrate("Single Sent");
-        // }
-        // Show "Sent" toast on success
-        //clearCoordinateForm(); // Clear entry boxes on success
-      } else {
-        print('Request failed with status: ${response.statusCode}');
-        print('Response body: ${response.body}');
-      }
-    } catch (error) {
-      print('Error: $error');
-    }
+    _socket.add(jsonData);
+    print('Data sent: $jsonData');
 
     //newAP = [];
   }
@@ -354,15 +352,14 @@ class _MyMapState extends State<MyMap> {
   Future<void> getCoordinate() async {
     print("Sending");
     await updateAP();
-    await collectPositionData(
-        0, -1, -1, 'SINGLE', formatNewDate(DateTime.now()), "SINGLE");
+    await collectPositionData();
     newAP = [];
     accessPoints = [];
   }
 
   void keepUpdateCoordinate() {
     Timer.periodic(Duration(seconds: xinterval), (timer) {
-      //getCoordinate();
+      getCoordinate();
     });
   }
 
