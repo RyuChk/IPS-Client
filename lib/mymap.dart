@@ -359,12 +359,19 @@ class _MyMapState extends State<MyMap> {
   }
 
   void keepUpdateCoordinate() {
-    Timer.periodic(Duration(seconds: 4), (timer) {
+    var dummyX = 0;
+    var dummyY = 0;
+    Timer.periodic(Duration(seconds: 2), (timer) {
       print("updating location");
       //getCoordinate();
       var newLocation = UserLocation(0, 0, 0, "x", "x");
 
-      newLocation.fetchLocation();
+      newLocation.fetchLocation(dummyX, dummyY);
+      dummyX += 1;
+      if (dummyX > 10) {
+        dummyX = 0;
+        dummyY -= 1;
+      }
 
       moveUser(newLocation.latitude, newLocation.longitude);
 
