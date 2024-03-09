@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:ipsmain/repository.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 import 'package:http/http.dart' as http;
 import 'authenpage.dart';
@@ -358,8 +359,23 @@ class _MyMapState extends State<MyMap> {
   }
 
   void keepUpdateCoordinate() {
-    Timer.periodic(Duration(seconds: xinterval), (timer) {
-      getCoordinate();
+    var dummyX = 0;
+    var dummyY = 0;
+    Timer.periodic(Duration(seconds: 2), (timer) {
+      print("updating location");
+      //getCoordinate();
+      var newLocation = UserLocation(0, 0, 0, "x", "x");
+
+      newLocation.fetchLocation(dummyX, dummyY);
+      dummyX += 1;
+      if (dummyX > 10) {
+        dummyX = 0;
+        dummyY -= 1;
+      }
+
+      moveUser(newLocation.latitude, newLocation.longitude);
+
+      //change marker
     });
   }
 
@@ -386,11 +402,6 @@ class _MyMapState extends State<MyMap> {
     });
   }
 
-  // void updateUser(newLat, newLng) {
-  //   moveUser(newLat, newLng);
-  //   focusUser();
-  // }
-
   void focusUser() {
     _mapController.move(latLng.LatLng(userLat, userLng), 21.5);
   }
@@ -409,10 +420,42 @@ class _MyMapState extends State<MyMap> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('My Map'),
+          title: Text('Map'),
         ),
         body: Column(
           children: [
+            Container(
+              color: Colors.white,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Building name
+                    Text(
+                      'CMKL Building',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // Floor name
+                    Text(
+                      '7th F',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // Label
+                    Text(
+                      'Corridor',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             Expanded(
               child: FlutterMap(
                 options: MapOptions(
@@ -462,7 +505,7 @@ class _MyMapState extends State<MyMap> {
               onPressed: () {
                 focusUser();
               },
-              tooltip: 'Focus Center',
+              tooltip: 'Focus User',
               child: Icon(Icons.location_searching),
             ),
           ],
