@@ -46,6 +46,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  loading_elevated_button: ^1.0.0+2
+  dropdown_button2: ^2.3.9
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +70,29 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - lib/icons/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: lib/fonts/inter-latin-100-normal.ttf
+          weight: 100
+        - asset: lib/fonts/inter-latin-200-normal.ttf
+          weight: 200
+        - asset: lib/fonts/inter-latin-300-normal.ttf
+          weight: 300
+        - asset: lib/fonts/inter-latin-400-normal.ttf
+          weight: 400
+        - asset: lib/fonts/inter-latin-500-normal.ttf
+          weight: 500
+        - asset: lib/fonts/inter-latin-600-normal.ttf
+          weight: 600
+        - asset: lib/fonts/inter-latin-700-normal.ttf
+          weight: 700
+        - asset: lib/fonts/inter-latin-800-normal.ttf
+          weight: 800
+        - asset: lib/fonts/inter-latin-900-normal.ttf
+          weight: 900
 
   # To add assets to your application, add an assets section, like this:
   # assets:
