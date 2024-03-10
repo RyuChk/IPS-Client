@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:http/io_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:ipsmain/repository.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import 'package:ipsmain/repository.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 import 'package:http/http.dart' as http;
 import 'authenpage.dart';
@@ -416,85 +417,129 @@ class _MyMapState extends State<MyMap> {
     });
   }
 
+  Widget get _appBar {
+    return Opacity(
+        opacity: 1,
+        child: Container (
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Container(
+              decoration: const BoxDecoration(
+              color: Color(0xffffffff),
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x50D5D8DC),
+                    spreadRadius: 5,
+                    blurRadius: 7,
+                    offset: Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+              ),
+              height: 64,
+              child:
+              const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Building name
+                          Text(
+                            'CMKL B.',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 20,
+                              color: Color(0xff242527),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // Floor name
+                          Text(
+                            '7th F',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 20,
+                              color: Color(0xff242527),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          // Label
+                          Text(
+                            'Corridor',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 20,
+                              color: Color(0xff242527),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]
+
+        ) )));
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Map'),
-        ),
-        body: Column(
+      appBar: null,
+        body: Stack(
           children: [
-            Container(
-              color: Colors.white,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Building name
-                    Text(
-                      'CMKL Building',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    // Floor name
-                    Text(
-                      '7th F',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    // Label
-                    Text(
-                      'Corridor',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: FlutterMap(
-                options: MapOptions(
-                  center: _center,
-                  zoom: _zoom,
-                ),
-                mapController: _mapController,
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
-                    additionalOptions: {
-                      'accessToken':
-                          'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
-                    },
+            Column(
+              children: [
+                Expanded(
+                child: FlutterMap(
+                  options: MapOptions(
+                    center: _center,
+                    zoom: _zoom,
                   ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _userCenter,
-                        width: 50.0,
-                        height: 50.0,
-                        rotate: true, // Rotate the marker based on direction
-                        alignment: Alignment.center,
-                        child: Transform.rotate(
-                          angle:
-                              -_direction, // Rotate the arrow based on compass heading
-                          child: Icon(
-                            Icons.arrow_circle_up_rounded,
-                            size: 50.0,
-                            color: Colors.blue,
+                  mapController: _mapController,
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                      'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
+                      additionalOptions: {
+                        'accessToken':
+                        'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
+                      },
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _userCenter,
+                          width: 50.0,
+                          height: 50.0,
+                          rotate: true, // Rotate the marker based on direction
+                          alignment: Alignment.center,
+                          child: Transform.rotate(
+                            angle:
+                            -_direction, // Rotate the arrow based on compass heading
+                            child: const Icon(
+                              Icons.arrow_circle_up_rounded,
+                              size: 50.0,
+                              color: Colors.blue,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
+                      ],
+                    )
+                  ],
+                ),
+              )],
             ),
+            Positioned(
+              top: 20,
+              left: 0,
+              right: 0,
+              child: _appBar,
+            ),
+
           ],
         ),
         floatingActionButton: Column(
@@ -505,15 +550,17 @@ class _MyMapState extends State<MyMap> {
               onPressed: () {
                 focusUser();
               },
-              tooltip: 'Focus User',
-              child: Icon(Icons.location_searching),
+              tooltip: 'Focus Center',
+              backgroundColor: const Color(0xff68A8E9), //bg color
+              child: const Icon(Icons.location_searching, color: Colors.white,  size: 32,),
             ),
           ],
         ),
         bottomNavigationBar: CustomNavBar.NavigationBar(
           currentIndex:
               0, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
-        ));
+        )
+    );
   }
 
   @override

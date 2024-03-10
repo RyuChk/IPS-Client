@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:http/http.dart' as http;
+import 'package:loading_elevated_button/loading_elevated_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'mymap.dart';
 
@@ -26,6 +27,7 @@ class AuthenPage extends StatefulWidget {
 
 class _AuthenPageState extends State<AuthenPage> {
   bool _isBusy = false;
+  bool _isSuccessed = false;
   final FlutterAppAuth _appAuth = const FlutterAppAuth();
   String? _accessToken;
   String? _idToken;
@@ -110,28 +112,84 @@ class _AuthenPageState extends State<AuthenPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('IPS Authentication'),
-      ),
-      body: SafeArea(
+      body: Container(
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        height: double.infinity,
+        width: double.infinity,
         child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              Visibility(
-                visible: _isBusy,
-                child: const LinearProgressIndicator(),
+            child: Column(
+          children: <Widget>[
+            Container(
+              alignment: Alignment.center,
+              child: const Text(
+                'IPS Application',
+                style: TextStyle(
+                    color: Color(0xff242527),
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Inter'),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                child: const Text('ENTER'),
+            ),
+
+            const SizedBox(height: 16),
+            Container(
+                alignment: Alignment.center,
+                child: Image.asset(
+                  "lib/icons/indoor.png",
+                  height: 250,
+                  width: 250,
+                )),
+            const SizedBox(height: 48),
+
+            Container(
+              alignment: Alignment.center,
+              child: _isBusy
+                  ? LoadingElevatedButton(
+                      style: ButtonStyle(
+                        minimumSize:
+                            MaterialStateProperty.all(const Size(180, 72)),
+                        backgroundColor:
+                            MaterialStateProperty.all(const Color(0xff68A8E9)),
+                        foregroundColor:
+                            MaterialStateProperty.all(const Color(0xffffffff)),
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 20)),
+                      ),
+                      loadingChild: const CircularProgressIndicator(
+                        backgroundColor: Color(0xff5b5b5b),
+                        color: Color(0xffffffff),
+                      ),
+                      isLoading: true,
+                      disabledWhileLoading: true,
+                      child: const Text('Loading'))
+                  : _isSuccessed ? Text('Welcome', style: TextStyle(
+                  color: Color(0xff242527),
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Inter'),)
+                  :ElevatedButton(
                 onPressed: _isBusy ? null : _signIn,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(180, 72),
+                  foregroundColor: const Color(0xffffffff), //text color
+                  backgroundColor: const Color(0xff68A8E9), //bg color
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 20),
+                  textStyle: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Inter'),
+                ),
+                child: const Text('LOGIN'),
               ),
-              const SizedBox(height: 8),
-              //const Text('User Info'),
-              //Text(_userInfo ?? ''),
-            ],
-          ),
-        ),
+            ),
+
+            //const Text('User Info'),
+            //Text(_userInfo ?? ''),
+          ],
+        )),
       ),
     );
   }
@@ -153,6 +211,7 @@ class _AuthenPageState extends State<AuthenPage> {
       );
 
       if (result != null) {
+        _isSuccessed = true;
         _processAuthTokenResponse(result);
         await _getUserInfo();
         await _saveAuthDetails();
@@ -160,6 +219,8 @@ class _AuthenPageState extends State<AuthenPage> {
           context,
           MaterialPageRoute(builder: (context) => MyMap()),
         );
+      } else {
+        print('null');
       }
     } catch (e) {
       print('Error signing in: $e');

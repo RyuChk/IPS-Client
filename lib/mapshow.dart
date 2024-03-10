@@ -1,3 +1,4 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latLng;
@@ -95,7 +96,23 @@ class _CustomMapState extends State<CustomMap> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Sandbox'),
+          backgroundColor: const Color(0xff68A8E9),
+          title: Container(
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.mode_edit_rounded, color: Colors.white,),
+            SizedBox(width: 8,),
+             Text('Sandbox', style: TextStyle(
+                fontSize: 28,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Inter'),),
+              ],
+            ),
+
+            )
         ),
         body: Column(
           children: [
@@ -107,8 +124,18 @@ class _CustomMapState extends State<CustomMap> {
                   child: TextFormField(
                     controller: _latitudeController,
                     decoration: InputDecoration(
-                      labelText: 'Latitude',
+                      label: Text('Latitude',
+                        style: TextStyle(
+                            color: Color(0xff242527),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Inter'),),
                     ),
+                    style: TextStyle(
+                        color: Color(0xff242527),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter'),
                     keyboardType: TextInputType.number,
                     onChanged: (value) =>
                         _updateCenter(value, _longitudeController.text),
@@ -123,8 +150,18 @@ class _CustomMapState extends State<CustomMap> {
                   child: TextFormField(
                     controller: _longitudeController,
                     decoration: InputDecoration(
-                      labelText: 'Longitude',
+                      label: Text('Longitude',
+                        style: TextStyle(
+                            color: Color(0xff242527),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Inter'),),
                     ),
+                    style: TextStyle(
+                        color: Color(0xff242527),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter'),
                     keyboardType: TextInputType.number,
                     onChanged: (value) =>
                         _updateCenter(_latitudeController.text, value),
@@ -139,8 +176,18 @@ class _CustomMapState extends State<CustomMap> {
                   child: TextFormField(
                     controller: _zoomController,
                     decoration: InputDecoration(
-                      labelText: 'Zoom Level',
+                      label: Text('Zoom Level',
+                        style: TextStyle(
+                            color: Color(0xff242527),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Inter'),),
                     ),
+                    style: TextStyle(
+                        color: Color(0xff242527),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter'),
                     keyboardType: TextInputType.number,
                     onChanged: (value) => _updateZoom(value),
                   ),
@@ -192,36 +239,68 @@ class _CustomMapState extends State<CustomMap> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             FloatingActionButton(
+              backgroundColor: const Color(0xff68A8E9), //bg color
               onPressed: () {
-                moveCenter();
               },
-              tooltip: 'Move to Location',
-              child: Icon(Icons.location_searching),
-            ),
-            SizedBox(height: 16),
-            FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  _fieldsVisible = !_fieldsVisible;
-                });
-              },
-              tooltip: _fieldsVisible ? 'Hide Fields' : 'Show Fields',
-              child:
-                  // Icon(_fieldsVisible ? Icons.visibility_off : Icons.visibility),
-                  Icon(_fieldsVisible
-                      ? Icons.keyboard_hide_rounded
-                      : Icons.keyboard_rounded),
-            ),
-            SizedBox(height: 16),
-            FloatingActionButton(
-              onPressed: () {
-                moveUser();
-              },
-              tooltip: 'Move User',
-              child: Icon(Icons.location_pin),
-            ),
-          ],
+              child: DropdownButtonHideUnderline(
+                  child: DropdownButton2(
+                    isExpanded: true,
+                    customButton: const Icon(
+                      Icons.more_vert,
+                      size: 32,
+                      color: Colors.white,
+                    ),
+                    dropdownStyleData: DropdownStyleData(
+                      width: 55,
+                      decoration: BoxDecoration(
+                        color: const Color(0xff68A8E9),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      offset: const Offset(-12, 210),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                          value: 'focusCenter',
+                          child: Icon(
+                            Icons.location_searching,
+                            color: Colors.white,
+                          )
+                      ),
+                      DropdownMenuItem(
+                          value: 'hideFields',
+                          child:  Icon(_fieldsVisible ? Icons.keyboard_hide_rounded : Icons.keyboard_rounded,
+                            color: Colors.white,
+                          )
+
+                      ),
+                      const DropdownMenuItem(
+                          value: 'moveUser',
+                          child: Icon(
+                            color: Colors.white,
+                            Icons.location_pin,
+                          )
+
+                      ),
+                    ],
+                    onChanged: (value) {
+                      switch (value) {
+                        case 'focusCenter':
+                          moveCenter();
+                          break;
+                        case 'hideFields':
+                          _fieldsVisible = !_fieldsVisible;
+                          break;
+                        case 'moveUser':
+                          moveUser();
+                          break;
+                      }
+                    },
+
+                  )
+              ),
+            )],
         ),
+
         bottomNavigationBar: CustomNavBar.NavigationBar(
           currentIndex:
               2, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias

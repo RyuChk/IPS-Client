@@ -82,7 +82,22 @@ class _SettingPageState extends State<SettingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
+        backgroundColor: const Color(0xff68A8E9),
+        title: Container(
+          alignment: Alignment.center,
+          child:  Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.settings, color: Colors.white),
+              SizedBox(width: 8,),
+              const Text('Setting', style: TextStyle(
+                  fontSize: 28,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Inter'),),
+            ],
+          )
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -101,30 +116,55 @@ class _SettingPageState extends State<SettingPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Username:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(snapshot.data!['preferred_username'] ?? ''),
+                          Text('username:',
+                            style: TextStyle(
+                                color: Color(0xff242527),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Inter'),),
+                          Text(snapshot.data!['preferred_username'] ?? '', style: TextStyle(
+                              color: Color(0xff242527),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter'),),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Email:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(snapshot.data!['email'] ?? ''),
+                          Text('email:',
+                            style: TextStyle(
+                                color: Color(0xff242527),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Inter'),),
+                          Text(snapshot.data!['email'] ?? '', style: TextStyle(
+                              color: Color(0xff242527),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter'),),
                         ],
                       ),
                       SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Name:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(snapshot.data!['name'] ?? ''),
+                          Text('name:',
+                            style: TextStyle(
+                                color: Color(0xff242527),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Inter'),),
+                          Text(snapshot.data!['name'] ?? '', style: TextStyle(
+                              color: Color(0xff242527),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter'),),
                         ],
                       ),
                     ],
@@ -135,6 +175,16 @@ class _SettingPageState extends State<SettingPage> {
             Spacer(),
             Center(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: const Color(0xff68A8E9), //text color
+                  backgroundColor: const Color(0xffF1F1F1), //bg color
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Inter'),
+                ),
                 onPressed: () async {
                   bool? logoutConfirmed = await showDialog(
                     context: context,
@@ -165,7 +215,7 @@ class _SettingPageState extends State<SettingPage> {
                     );
                   }
                 },
-                child: Text('Log out'),
+                child: Text('LOG OUT'),
               ),
             ),
           ],
