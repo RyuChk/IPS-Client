@@ -56,8 +56,8 @@ class _MyMapState extends State<MyMap> {
     super.initState();
     _checkLoginStatus();
     // Initial center coordinates and zoom level
-    const start_lat = 13.72765;
-    const start_lng = 100.772435;
+    const start_lat = 13.7279936;
+    const start_lng = 100.7782921;
     const start_zoom = 21.5;
     _center = latLng.LatLng(start_lat, start_lng);
     _userCenter = latLng.LatLng(start_lat, start_lng);
@@ -503,7 +503,8 @@ class _MyMapState extends State<MyMap> {
                   children: [
                     TileLayer(
                       urlTemplate:
-                      'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
+                      'https://api.mapbox.com/styles/v1/kl63011179/cltnawp1e01ll01pj0akv7ofx/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg',
+                      // 'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
                       additionalOptions: {
                         'accessToken':
                         'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',

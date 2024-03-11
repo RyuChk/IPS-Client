@@ -30,8 +30,8 @@ class _CustomMapState extends State<CustomMap> {
   void initState() {
     super.initState();
     // Initial center coordinates and zoom level
-    const start_lat = 13.72765;
-    const start_lng = 100.772435;
+    const start_lat = 13.7279936;
+    const start_lng = 100.7782921;
     const start_zoom = 21.5;
     _center = latLng.LatLng(start_lat, start_lng);
     _userCenter = latLng.LatLng(start_lat, start_lng);

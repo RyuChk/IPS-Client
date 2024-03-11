@@ -1,3 +1,4 @@
+import 'dart:core';
 import 'dart:ffi';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -28,8 +29,9 @@ class _AdminMapState extends State<AdminMap> {
   StreamSubscription<CompassEvent>? _compassSubscription;
 
   // Dropdown menu values
-  String selectedBuilding = 'E12 Building';
+  String selectedBuilding = 'CMKL Building';
   String selectedFloor = '7th Floor';
+
 
   bool isOpen = false;
 
@@ -37,8 +39,8 @@ class _AdminMapState extends State<AdminMap> {
   void initState() {
     super.initState();
     // Initial center coordinates and zoom level
-    const start_lat = 13.72765;
-    const start_lng = 100.772435;
+    const start_lat = 13.7279936;
+    const start_lng = 100.7782921;
     const start_zoom = 21.5;
     markerList = [];
     userList = [];
@@ -56,9 +58,9 @@ class _AdminMapState extends State<AdminMap> {
 
   void keepUpdateUserCoordinate() {
     List<List<dynamic>> _userList = [
-      ['John', 13.72765, 100.772435],
-      ['Jane', 13.72770, 100.772490],
-      ['Doe', 13.72780, 100.772400],
+      ['John', 13.7279936, 100.7782921],
+      ['Jane', 13.7279900, 100.7782921],
+      ['Doe', 13.72799110, 100.7782941],
     ];
     Timer.periodic(Duration(seconds: 4), (timer) {
       //getCoordinate();
@@ -249,9 +251,8 @@ class _AdminMapState extends State<AdminMap> {
                                     ),
                                   ),
                                   items: <String>[
+                                    '6th Floor',
                                     '7th Floor',
-                                    '8th Floor',
-                                    '9th Floor'
                                   ].map<DropdownMenuItem<String>>((String value) {
                                     return DropdownMenuItem<String>(
                                       value: value,
@@ -284,7 +285,9 @@ class _AdminMapState extends State<AdminMap> {
                   children: [
                     TileLayer(
                       urlTemplate:
-                          'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
+                      selectedFloor == '6th Floor' ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnawp1e01ll01pj0akv7ofx/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg':
+                      selectedFloor == '7th Floor' ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnap3la00n501pka0jc9uji/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg'
+                    : '',
                       additionalOptions: {
                         'accessToken':
                             'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
