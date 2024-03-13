@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/io_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:ipsmain/repository.dart';
+import 'package:ipsmain/api/repository.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:shared_preferences/shared_preferences.dart';

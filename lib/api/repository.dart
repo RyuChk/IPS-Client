@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:latlong2/latlong.dart' as latLng;
 import 'dart:math';
 
@@ -7,6 +6,9 @@ const double earthRadius = 6378137;
 double latOrigin = 13.72778;
 double lngOrigin = 100.772375;
 var origin = latLng.LatLng(latOrigin, lngOrigin);
+
+const String baseURL = 'https://bff-api.cie-ips.com';
+const String mapServiceBaseURL = '$baseURL/api/v1/map';
 
 class UserLocation {
   double _x;
