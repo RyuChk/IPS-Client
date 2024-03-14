@@ -1,6 +1,8 @@
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:ipsmain/api/models/user-tracking-grpc.dart';
+import 'package:ipsmain/api/user-tracking.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'adminmap.dart';
 import 'authenpage.dart';
@@ -14,14 +16,13 @@ class CrewList extends StatefulWidget {
 }
 
 class _CrewListState extends State<CrewList> {
-  late Future<Map<String, String>> _userInfo;
-  
-  
+  late String? username;
+  late String? accessToken;
+
   @override
   void initState() {
     super.initState();
     _checkLoginStatus();
-    _userInfo = _getUserInfo();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -70,21 +71,13 @@ class _CrewListState extends State<CrewList> {
     }
   }
 
-  Future<Map<String, String>> _getUserInfo() async {
+  Future<List<OnlineUser>> _getUserInfo() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? username = prefs.getString('preferred_username') ?? 'Unknown';
-    String? email = prefs.getString('email') ?? 'Unknown';
-    String? nickname = prefs.getString('name') ?? 'Unknown';
-    return {
-      'preferred_username': username,
-      'email': email,
-      'name': nickname,
-    };
+    username = prefs.getString('username');
+    accessToken = prefs.getString('access_token');
+    return getOnlineUser("CMKL", 6, accessToken, 1.2, 1.2);
   }
 
-  //dummy crews
-  List<String> crews = ['1','2','3','4'];
-  
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xffF1F1F1),
@@ -112,19 +105,20 @@ class _CrewListState extends State<CrewList> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FutureBuilder(future: _userInfo,
-                  builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
+              FutureBuilder(future: _getUserInfo(),
+                  builder: (BuildContext context, AsyncSnapshot<List<OnlineUser>> snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting){
                       return Center(child: CircularProgressIndicator(),);
                     }else if (snapshot.hasError){
                       return Center(child: Text('Error: ${snapshot.error}'));
 
                     }else{
+                      print(snapshot.data);
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // loop for list all crews here
-                          for ( var i in crews ) Column(
+                          for ( var i in snapshot.requireData ) Column(
                             children: [
                               SizedBox(height: 8,),
                               Container(
@@ -155,7 +149,7 @@ class _CrewListState extends State<CrewList> {
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(snapshot.data!['name'] ?? '',
+                                        Text(i.displayName ?? '',
                                             style: TextStyle(
                                                 color: Color(0xff242527),
                                                 fontSize: 18,
@@ -170,7 +164,7 @@ class _CrewListState extends State<CrewList> {
                                                     fontWeight: FontWeight.w500,
                                                     fontFamily: 'Inter')),
                                             SizedBox(width: 8,),
-                                            Text('room A231',
+                                            Text('${i.latitude}, ${i.longitude}',
                                                 style: TextStyle(
                                                     color: Color(0xff242527),
                                                     fontSize: 18,
