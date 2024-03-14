@@ -288,6 +288,7 @@ class _AdminMapState extends State<AdminMap> {
                       selectedFloor == '6th Floor' ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnawp1e01ll01pj0akv7ofx/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg':
                       selectedFloor == '7th Floor' ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnap3la00n501pka0jc9uji/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg'
                     : '',
+
                       additionalOptions: {
                         'accessToken':
                             'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
