@@ -52,12 +52,16 @@ Future<BuildingInfo> getBuildingInfo(String building, accessToken) async {
 
 Future<FloorDetail> getFloorDetailFromServer(
     String building, double floor, accessToken) async {
+  int floorInt = floor.toInt();
   final response = await http.get(
-    Uri.parse("$mapServiceBaseURL/info/$building/$floor"),
+    Uri.parse("$mapServiceBaseURL/info/$building/$floorInt"),
     headers: {
       'Authorization': 'Bearer $accessToken', // Add your access token here
     },
   );
+  print("resp floor detail server");
+  print(response.statusCode);
+  print(response.body);
   if (response.statusCode == 200) {
     return FloorDetail.fromJson(jsonDecode(response.body));
   } else {

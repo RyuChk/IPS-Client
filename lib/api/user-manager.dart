@@ -6,6 +6,9 @@ import 'package:ipsmain/api/constants.dart';
 import 'package:ipsmain/api/models/user-manager-grpc.dart';
 
 Future<UserLocation> getUserLocation(obj, accessToken) async {
+  print("shooting userlocation");
+  print(obj);
+  print(obj.toString());
   final response = await http.post(
     Uri.parse(userManagerServiceBaseURL),
     headers: <String, String>{

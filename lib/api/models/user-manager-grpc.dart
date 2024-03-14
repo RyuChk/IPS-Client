@@ -8,12 +8,12 @@ class UserLocation {
   final double x;
   final double y;
   final double z;
-  final double originLat;
-  final double originLong;
+  double originLat;
+  double originLong;
   final String label;
   final String building;
 
-  const UserLocation({
+  UserLocation({
     required this.x,
     required this.y,
     required this.z,
@@ -55,15 +55,25 @@ class UserLocation {
   factory UserLocation.fromJson(Map<String, dynamic> json) {
     print("new json loader userloly");
     return UserLocation(
-      x: json['x'],
-      y: json['y'],
-      z: json['z'],
+      x: toDouble(json['x']),
+      y: toDouble(json['y']),
+      z: toDouble(json['z']),
       originLat: json['origin_lat'] ??
-          0, // Use default value if 'origin_lat' is missing
+          0.0, // Use default value if 'origin_lat' is missing
       originLong: json['origin_long'] ??
-          0, // Use default value if 'origin_long' is missing
+          0.0, // Use default value if 'origin_long' is missing
       label: json['label'],
       building: json['building'],
     );
+  }
+}
+
+double toDouble(dynamic value) {
+  if (value is int) {
+    return value.toDouble();
+  } else if (value is double) {
+    return value;
+  } else {
+    throw ArgumentError('Value must be int or double');
   }
 }

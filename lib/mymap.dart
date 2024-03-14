@@ -59,6 +59,9 @@ class _MyMapState extends State<MyMap> {
   String labelText = '';
   late List<Marker> pinList = [];
   late int mapInitialized = 0;
+  late bool isBuildingValid = false;
+  late bool isLoading = true;
+  late String loadingText = '';
 
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
@@ -411,11 +414,17 @@ class _MyMapState extends State<MyMap> {
     allBuilding = await buildingListFuture;
     print('allBuilding: $allBuilding');
     if (!allBuilding.containsKey(currentBuilding)) {
+      print("init map no key emptying:");
       makeEmptyLocationText();
+      setState(() {
+        isLoading = true;
+        loadingText = 'Non-Service Buidling...';
+      });
       //todo show err "Not in any service building" and
       //use fake default val
-      //return;
+      return;
     }
+    isBuildingValid = true;
     print("init first buildinginfo");
     Future<BuildingInfo> buildingInfoFuture =
         mapHandler.getBuildingInfo(currentBuilding, verifiedToken);
@@ -463,14 +472,14 @@ class _MyMapState extends State<MyMap> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.person_rounded,
+              Icons.location_pin,
               size: 25.0,
               color: Colors.red, // Set the icon color to white
             ),
             Text(
               room,
               style: TextStyle(
-                color: Colors.red, // Set the text color to white
+                color: Colors.white, // Set the text color to white
               ),
             ),
           ],
@@ -489,11 +498,14 @@ class _MyMapState extends State<MyMap> {
   }
 
   void setNewFloorInfo(double currentFloor) async {
+    print("getting floor from server");
     Future<FloorDetail> floorInfoFuture = mapHandler.getFloorDetailFromServer(
         currentBuildingInfo.name, currentFloor, verifiedToken);
     currentFloorInfo = await floorInfoFuture;
+    print("new floor setter: ");
+    print(currentFloorInfo.info.symbol);
     setState(() {
-      floorText = '${currentFloorInfo.info.name} F.';
+      floorText = '${currentFloorInfo.info.symbol} F.';
     });
     changeFloorMapAppearance();
   }
@@ -504,7 +516,6 @@ class _MyMapState extends State<MyMap> {
   }
 
   void keepUpdateCoordinate() {
-    var isBuildingValid = false;
     Timer.periodic(Duration(seconds: 3), (timer) async {
       print("updating location");
       if (verifiedToken == '') {
@@ -519,10 +530,15 @@ class _MyMapState extends State<MyMap> {
       print("allBuilding print");
       print(allBuilding);
 
+      print('current: $currentBuilding');
+
       var newCurrentBuilding = getCurrentBuilding();
+      print('newcurrent: $newCurrentBuilding');
       if (currentBuilding != newCurrentBuilding) {
+        print('changing building');
         currentBuilding = newCurrentBuilding;
         if (!allBuilding.containsKey(currentBuilding)) {
+          print('not found in service building');
           isBuildingValid = false;
         } else {
           isBuildingValid = true;
@@ -531,9 +547,13 @@ class _MyMapState extends State<MyMap> {
       }
       if (!isBuildingValid) {
         makeEmptyLocationText();
-        print("invalid building");
+        print("emptying text: invalid building");
+        setState(() {
+          isLoading = true;
+          loadingText = 'Non-Service Buidling...';
+        });
         //todo skip below
-        //return;
+        return;
       }
       await updateAP();
       print("updated AP");
@@ -556,19 +576,40 @@ class _MyMapState extends State<MyMap> {
       var newLocation = await newLocationFuture;
       print('newLocation: ');
       print(newLocation.label);
+      print("current floor: $zLevel");
+      print("newcurrent floor: ");
+      print(newLocation.floor);
 
       if (newLocation.floor != zLevel) {
+        print("setting new floor");
         zLevel = newLocation.floor;
         setNewFloorInfo(zLevel);
       }
 
+      newLocation.originLat = currentBuildingInfo.originLat;
+      newLocation.originLong = currentBuildingInfo.originLong;
+
       userLat = newLocation.latitude;
       userLng = newLocation.longitude;
+      print("tele user to: ");
+      print(userLat);
+      print(userLng);
       moveUser(userLat, userLng);
+
+      if (newLocation.label == labelText) {
+        return;
+      }
 
       setState(() {
         labelText = newLocation.label;
       });
+
+      if (isLoading) {
+        setState(() {
+          isLoading = false;
+          loadingText = '';
+        });
+      }
     });
   }
 
@@ -705,7 +746,27 @@ class _MyMapState extends State<MyMap> {
                       )
                     ],
                   ),
-                )
+                ),
+                if (isLoading)
+                  Container(
+                    color: Colors.black
+                        .withOpacity(0.5), // Semi-transparent black color
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(), // Loading indicator
+                          SizedBox(
+                              height: 10), // Spacer between indicator and text
+                          Text(
+                            loadingText, // Text indicating loading status
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
             Positioned(
