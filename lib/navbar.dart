@@ -67,10 +67,10 @@ class NavigationBar extends StatelessWidget {
             icon: Icon(Icons.admin_panel_settings,  size: 28,),
             label: 'Overwatch',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.mode_edit_rounded,  size: 28,),
-            label: 'Sandbox',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.mode_edit_rounded,  size: 28,),
+          //   label: 'Sandbox',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz,  size: 28,),
             label: 'Setting',

@@ -5,9 +5,12 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:ipsmain/api/models/user-tracking-grpc.dart';
+import 'package:ipsmain/api/user-tracking.dart';
 import 'package:ipsmain/crewlist.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'navbar.dart' as CustomNavBar;
 import 'dart:math';
@@ -22,15 +25,15 @@ class _AdminMapState extends State<AdminMap> {
   late double _zoom;
   late MapController _mapController;
   late List<Marker> markerList;
-  late List<List> userList;
+  late List<OnlineUser> userList;
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _zoomController = TextEditingController();
   StreamSubscription<CompassEvent>? _compassSubscription;
 
   // Dropdown menu values
-  String selectedBuilding = 'CMKL Building';
-  String selectedFloor = '7th Floor';
+  String selectedBuilding = 'CMKL';
+  int selectedFloor = 6;
 
 
   bool isOpen = false;
@@ -56,27 +59,13 @@ class _AdminMapState extends State<AdminMap> {
     keepUpdateUserCoordinate();
   }
 
-  void keepUpdateUserCoordinate() {
-    List<List<dynamic>> _userList = [
-      ['John', 13.7279936, 100.7782921],
-      ['Jane', 13.7279900, 100.7782921],
-      ['Doe', 13.72799110, 100.7782941],
-    ];
+  Future<void> keepUpdateUserCoordinate() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     Timer.periodic(Duration(seconds: 4), (timer) {
       //getCoordinate();
-
-      _userList.forEach((user) {
-        // Generate random latitude and longitude variations within the specified range
-        double latVariation = (Random().nextDouble() * 2 - 1) * 0.00002;
-        double lngVariation = (Random().nextDouble() * 2 - 1) * 0.00002;
-
-        // Apply the variations to the initial latitude and longitude
-        user[1] += latVariation;
-        user[2] += lngVariation;
-      });
-      setState(() {
-        userList = _userList;
-      });
+      getOnlineUser(selectedBuilding, selectedFloor, prefs.getString('accessToken'), 13.72785451, 100.77848733).then((onlineUser) => setState(() {
+        userList = onlineUser;
+      }));
       searchUsers();
     });
   }
@@ -89,10 +78,10 @@ class _AdminMapState extends State<AdminMap> {
     double avgLat = 0;
     double avgLng = 0;
     for (var eachUser in userList) {
-      avgLat += eachUser[1];
-      avgLng += eachUser[2];
+      avgLat += eachUser.latitude;
+      avgLng += eachUser.longitude;
     }
-    if (userList.isNotEmpty) {
+    if (userList.isEmpty) {
       avgLat = avgLat / userList.length;
       avgLng = avgLng / userList.length;
       _mapController.move(latLng.LatLng(avgLat, avgLng), 21);
@@ -101,10 +90,10 @@ class _AdminMapState extends State<AdminMap> {
     }
   }
 
-  void genUserMarker(String user, double lat, double lng) {
+  void genUserMarker(OnlineUser user) {
     markerList.add(
       Marker(
-        point: latLng.LatLng(lat, lng),
+        point: latLng.LatLng(user.latitude, user.longitude),
         width: 50.0,
         height: 50.0,
         child: Column(
@@ -116,7 +105,7 @@ class _AdminMapState extends State<AdminMap> {
               color: Colors.white, // Set the icon color to white
             ),
             Text(
-              user,
+              user.displayName,
               style: TextStyle(
                 color: Colors.white, // Set the text color to white
               ),
@@ -133,7 +122,8 @@ class _AdminMapState extends State<AdminMap> {
     setState(() {
       markerList.clear(); // Clear existing markers
       for (var user in userList) {
-        genUserMarker(user[0], user[1], user[2]);
+        print(user.latitude);
+        genUserMarker(user);
       }
     });
   }
@@ -205,9 +195,8 @@ class _AdminMapState extends State<AdminMap> {
                                       ),
                                     ),
                                     items: <String>[
-                                      'E12 Building',
-                                      'CMKL Building',
-                                      'HM Building'
+                                      'CMKL',
+                                      '12-Building',
                                     ].map<DropdownMenuItem<String>>((String value) {
                                       return DropdownMenuItem<String>(
                                         value: value,
@@ -221,10 +210,10 @@ class _AdminMapState extends State<AdminMap> {
                             DropdownButtonHideUnderline(
                                 child: DropdownButton2<String>(
                                   isExpanded: true,
-                                  value: selectedFloor,
+                                  value: selectedFloor.toString(),
                                   onChanged: (String? newValue) {
                                     setState(() {
-                                      selectedFloor = newValue!;
+                                      selectedFloor = int.parse(newValue!);
                                     });
                                   },
                                   buttonStyleData: const ButtonStyleData(
@@ -250,13 +239,14 @@ class _AdminMapState extends State<AdminMap> {
                                       thumbVisibility: MaterialStateProperty.all(true),
                                     ),
                                   ),
-                                  items: <String>[
-                                    '6th Floor',
-                                    '7th Floor',
-                                  ].map<DropdownMenuItem<String>>((String value) {
+                                  items: <int>[
+                                    6,
+                                    7,
+                                    8,
+                                  ].map<DropdownMenuItem<String>>((int value) {
                                     return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
+                                      value: value.toString(),
+                                      child: Text(value.toString()),
                                     );
                                   }).toList(),
                                 ))
