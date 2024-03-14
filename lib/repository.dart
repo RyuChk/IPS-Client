@@ -35,8 +35,8 @@ class UserLocation {
     "x": "0",
     "y": "0",
     "z": "1",
-    "origin_lat":"13.72778",
-    "origin_lng":"100.772375",
+    "origin_lat":"13.7279936",
+    "origin_lng":"100.7782921",
     "building":"CMKL Buidling",
     "label":"Corridor"
   }
