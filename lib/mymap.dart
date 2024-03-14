@@ -391,7 +391,7 @@ class _MyMapState extends State<MyMap> {
     pinList.add(Marker(
       point: _userCenter,
       width: 50.0,
-      height: 50.0,
+      height: 100.0,
       rotate: true, // Rotate the marker based on direction
       alignment: Alignment.center,
       child: Transform.rotate(
@@ -465,25 +465,32 @@ class _MyMapState extends State<MyMap> {
   void addRoomPin(String room, double lat, double lng) {
     pinList.add(
       Marker(
+          width: 100.0,
+          height: 100,
+        alignment: Alignment.center,
         point: latLng.LatLng(lat, lng),
-        width: 50.0,
-        height: 50.0,
-        child: Column(
+        child: SizedBox(
+          width: 100.0,
+          height: 100,
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.location_pin,
-              size: 50.0,
+              size: 30.0,
               color: Colors.red, // Set the icon color to white
             ),
             Text(
               room,
-              style: TextStyle(
-                color: Colors.white, // Set the text color to white
-              ),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Inter'),
             ),
           ],
-        ),
+        ),)
       ),
     );
   }
@@ -566,7 +573,8 @@ class _MyMapState extends State<MyMap> {
       if (!isWiFiScanned) {
         //todo skip below
         print("wifi not scanned");
-        return;
+        //todo: remove when finish
+        // return;
       }
 
       // var newLocation = UserLocation(0, 0, 0, "x", "x");
