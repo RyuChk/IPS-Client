@@ -61,7 +61,7 @@ class _MyMapState extends State<MyMap> {
   late int mapInitialized = 0;
   late bool isBuildingValid = false;
   late bool isLoading = true;
-  late String loadingText = '';
+  late String loadingText = 'Locating...';
 
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
@@ -473,7 +473,7 @@ class _MyMapState extends State<MyMap> {
           children: [
             Icon(
               Icons.location_pin,
-              size: 25.0,
+              size: 50.0,
               color: Colors.red, // Set the icon color to white
             ),
             Text(
@@ -491,10 +491,11 @@ class _MyMapState extends State<MyMap> {
   void changeFloorMapAppearance() {
     //todo change map appearance for this floor
     pinList.clear();
-    addUserToMap();
+
     for (var room in currentFloorInfo.room) {
       addRoomPin(room.name, room.latitude, room.longitude);
     }
+    addUserToMap();
   }
 
   void setNewFloorInfo(double currentFloor) async {
@@ -640,6 +641,7 @@ class _MyMapState extends State<MyMap> {
     mapLat = userLat;
     mapLng = userLng;
     _mapController.move(latLng.LatLng(mapLat, mapLng), 21.5);
+    _mapController.rotate(0);
   }
 
   void moveToLocation(double lat, double lon, double zoom) {
@@ -748,22 +750,29 @@ class _MyMapState extends State<MyMap> {
                   ),
                 ),
                 if (isLoading)
-                  Container(
-                    color: Colors.black
-                        .withOpacity(0.5), // Semi-transparent black color
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(), // Loading indicator
-                          SizedBox(
-                              height: 10), // Spacer between indicator and text
-                          Text(
-                            loadingText, // Text indicating loading status
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Colors.black
+                          .withOpacity(0.5), // Semi-transparent black color
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(), // Loading indicator
+                            SizedBox(
+                                height:
+                                    10), // Spacer between indicator and text
+                            Text(
+                              loadingText, // Text indicating loading status
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
