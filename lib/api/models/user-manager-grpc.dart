@@ -28,30 +28,42 @@ class UserLocation {
   double get latitude => origin.latitude + ((x / earthRadius) * 180 / pi);
   double get longitude =>
       origin.longitude +
-          ((x / (earthRadius * cos(origin.latitude * pi / 180))) * 180 / pi);
+      ((x / (earthRadius * cos(origin.latitude * pi / 180))) * 180 / pi);
   double get floor => z;
 
+  // factory UserLocation.fromJson(Map<String, dynamic> json) {
+  //   return switch (json) {
+  //     {
+  //       'x': double x,
+  //       'y': double y,
+  //       'z': double z,
+  //       'label': String label,
+  //       'building': String building,
+  //     } =>
+  //       UserLocation(
+  //         x: x,
+  //         y: y,
+  //         z: z,
+  //         originLat: 0, // Set default value for originLat
+  //         originLong: 0, // Set default value for originLong
+  //         label: label,
+  //         building: building,
+  //       ),
+  //     _ => throw const FormatException('Failed to load UserLocation.'),
+  //   };
+  // }
   factory UserLocation.fromJson(Map<String, dynamic> json) {
-    return switch (json) {
-      {
-      'x': double x,
-      'y': double y,
-      'z': double z,
-      'origin_lat': double originLat,
-      'origin_long': double originLong,
-      'label': String lebal,
-      'building': String building,
-      } =>
-          UserLocation(
-            x: x,
-            y: y,
-            z: z,
-            originLat: originLat,
-            originLong: originLong,
-            label: lebal,
-            building: building,
-          ),
-      _ => throw const FormatException('Failed to load UserLocation.'),
-    };
+    print("new json loader userloly");
+    return UserLocation(
+      x: json['x'],
+      y: json['y'],
+      z: json['z'],
+      originLat: json['origin_lat'] ??
+          0, // Use default value if 'origin_lat' is missing
+      originLong: json['origin_long'] ??
+          0, // Use default value if 'origin_long' is missing
+      label: json['label'],
+      building: json['building'],
+    );
   }
 }
