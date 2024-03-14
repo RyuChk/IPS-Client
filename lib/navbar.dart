@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'authenpage.dart';
 import 'mapshow.dart';
 import 'mymap.dart';
 import 'adminmap.dart';
 import 'settingpage.dart';
+import 'package:http/http.dart' as http;
 
 class NavigationBar extends StatelessWidget {
   final int currentIndex;
+  final String? permission;
 
-  NavigationBar({required this.currentIndex});
+  NavigationBar({required this.currentIndex, this.permission});
 
   @override
   Widget build(BuildContext context) {
@@ -67,10 +71,10 @@ class NavigationBar extends StatelessWidget {
             icon: Icon(Icons.admin_panel_settings,  size: 28,),
             label: 'Overwatch',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.mode_edit_rounded,  size: 28,),
-            label: 'Sandbox',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.mode_edit_rounded,  size: 28,),
+          //   label: 'Sandbox',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz,  size: 28,),
             label: 'Setting',

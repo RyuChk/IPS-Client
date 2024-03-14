@@ -38,6 +38,7 @@ class _AdminMapState extends State<AdminMap> {
   @override
   void initState() {
     super.initState();
+
     // Initial center coordinates and zoom level
     const start_lat = 13.7279936;
     const start_lng = 100.7782921;
@@ -386,6 +387,7 @@ class _AdminMapState extends State<AdminMap> {
       ),
       bottomNavigationBar: CustomNavBar.NavigationBar(
         currentIndex: 1,
+        permission: 'admin',
       ),
     );
   }
