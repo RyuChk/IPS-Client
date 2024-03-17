@@ -301,10 +301,11 @@ class _CustomMapState extends State<CustomMap> {
             )],
         ),
 
-        bottomNavigationBar: CustomNavBar.NavigationBar(
-          currentIndex:
-              2, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
-        ));
+        // bottomNavigationBar: CustomNavBar.NavigationBar(
+        //   currentIndex:
+        //       2, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
+        // )
+    );
   }
 
   @override
