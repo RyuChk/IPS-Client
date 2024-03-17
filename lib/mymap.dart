@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:ipsmain/api/repository.dart';
 import 'package:ipsmain/api/map.dart' as mapHandler;
 import 'package:ipsmain/api/user-manager.dart' as userManagerHandler;
+import 'package:ipsmain/skeleton.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +27,8 @@ import 'navbar.dart'
 class MyMap extends StatefulWidget {
   @override
   _MyMapState createState() => _MyMapState();
+
+
 }
 
 class _MyMapState extends State<MyMap> {
@@ -62,6 +65,8 @@ class _MyMapState extends State<MyMap> {
   late bool isBuildingValid = false;
   late bool isLoading = true;
   late String loadingText = 'Locating...';
+  late bool isAdmin = false;
+  late bool isCheckingRole = true;
 
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
@@ -156,6 +161,12 @@ class _MyMapState extends State<MyMap> {
       } else {
         //verified
         verifiedToken = accessToken;
+        //check user's role
+        Map<String, dynamic> data = json.decode(response.body);
+        dynamic groups = data['groups'];
+        if (groups is List<dynamic>) {
+          isAdmin = groups.contains("authentik Admins");
+        }
       }
     } catch (e) {
       print('Error verifying token: $e');
@@ -168,6 +179,11 @@ class _MyMapState extends State<MyMap> {
           transitionDuration: Duration(seconds: 0),
         ),
       );
+    }
+    finally {
+      setState(() {
+        isCheckingRole = false; // Move this line inside setState
+      });
     }
   }
 
@@ -399,7 +415,7 @@ class _MyMapState extends State<MyMap> {
         child: const Icon(
           Icons.arrow_circle_up_rounded,
           size: 50.0,
-          color: Colors.blue,
+          color: Color(0xff68A8E9),
         ),
       ),
     ));
@@ -479,14 +495,14 @@ class _MyMapState extends State<MyMap> {
             const Icon(
               Icons.location_pin,
               size: 30.0,
-              color: Colors.red, // Set the icon color to white
+              color: Colors.white, // Set the icon color to white
             ),
             Text(
               room,
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   fontFamily: 'Inter'),
             ),
           ],
@@ -573,8 +589,7 @@ class _MyMapState extends State<MyMap> {
       if (!isWiFiScanned) {
         //todo skip below
         print("wifi not scanned");
-        //todo: remove when finish
-        // return;
+        return;
       }
 
       // var newLocation = UserLocation(0, 0, 0, "x", "x");
@@ -696,9 +711,9 @@ class _MyMapState extends State<MyMap> {
                               buildingText,
                               style: TextStyle(
                                 fontFamily: 'Inter',
-                                fontSize: 20,
+                                fontSize: 16,
                                 color: Color(0xff242527),
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             // Floor name
@@ -706,9 +721,9 @@ class _MyMapState extends State<MyMap> {
                               floorText,
                               style: TextStyle(
                                 fontFamily: 'Inter',
-                                fontSize: 20,
+                                fontSize: 16,
                                 color: Color(0xff242527),
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             // Label
@@ -716,9 +731,9 @@ class _MyMapState extends State<MyMap> {
                               labelText,
                               style: TextStyle(
                                 fontFamily: 'Inter',
-                                fontSize: 20,
+                                fontSize: 16,
                                 color: Color(0xff242527),
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -729,93 +744,109 @@ class _MyMapState extends State<MyMap> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: null,
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: FlutterMap(
-                    options: MapOptions(
-                      center: _center,
-                      zoom: _zoom,
-                    ),
-                    mapController: _mapController,
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
-                        additionalOptions: {
-                          'accessToken':
-                              'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
-                        },
+    if (isCheckingRole){
+      return Navigator(
+        onGenerateRoute: (routeSettings) {
+          return MaterialPageRoute(builder: (context) => SkeletonPage());
+        },
+      );
+    } else {
+      return Scaffold(
+          appBar: null,
+          body: Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: FlutterMap(
+                      options: MapOptions(
+                        center: _center,
+                        zoom: _zoom,
                       ),
-                      MarkerLayer(
-                        markers: pinList,
-                      )
-                    ],
+                      mapController: _mapController,
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                          'https://api.mapbox.com/styles/v1/kl63011179/clt162br900h501me9qyfdcg7/tiles/{z}/{x}/{y}?access_token=sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
+                          additionalOptions: {
+                            'accessToken':
+                            'sk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQxMmd6dTkxN2hhMmtseno0bm85c3MwIn0.IyAPKgQRGnXIixpbals4VQ',
+                          },
+                        ),
+                        MarkerLayer(
+                          markers: pinList,
+                        )
+                      ],
+                    ),
+                  ),
+
+                ],
+              ),
+              if (isLoading)
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(
+                          color: Color(0xffffffff),
+                          backgroundColor: Color(0xff68A8E9),
+                        ),// Loading indicator
+                        SizedBox(
+                            height:
+                            10), // Spacer between indicator and text
+                        Text(
+                          loadingText, // Text indicating loading status
+                          style: TextStyle(color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Inter'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                if (isLoading)
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      color: Colors.black
-                          .withOpacity(0.5), // Semi-transparent black color
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(), // Loading indicator
-                            SizedBox(
-                                height:
-                                    10), // Spacer between indicator and text
-                            Text(
-                              loadingText, // Text indicating loading status
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            Positioned(
-              top: 20,
-              left: 0,
-              right: 0,
-              child: _appBar,
-            ),
-          ],
-        ),
-        floatingActionButton: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            FloatingActionButton(
-              onPressed: () {
-                focusUser();
-              },
-              tooltip: 'Focus Center',
-              backgroundColor: const Color(0xff68A8E9), //bg color
-              child: const Icon(
-                Icons.location_searching,
-                color: Colors.white,
-                size: 32,
+              Positioned(
+                top: 45,
+                left: 0,
+                right: 0,
+                child: _appBar,
               ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: CustomNavBar.NavigationBar(
-          currentIndex:
-              0, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
-        ));
+            ],
+          ),
+          floatingActionButton:
+              // for admin only
+
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    focusUser();
+                  },
+                  tooltip: 'Focus Center',
+                  backgroundColor: const Color(0xff68A8E9), //bg color
+                  child: const Icon(
+                    Icons.location_searching,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              )
+
+          ,
+          bottomNavigationBar: CustomNavBar.NavigationBar(
+            currentIndex:
+            0, // Set the currentIndex according to your needs // Use the NavigationBar widget with the alias
+              isAdmin: isAdmin
+          ));
+    }
+
   }
 
   @override

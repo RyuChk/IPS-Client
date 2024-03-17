@@ -18,3 +18,18 @@ Future<List<OnlineUser>> getOnlineUser(String building, int floor, accessToken, 
   }
   return [];
 }
+
+Future<List<OnlineUserDetail>> getAllOnlineUsers(String accessToken) async {
+  final response = await http.get(
+    Uri.parse("$adminServiceBaseURL/online/"),
+    headers: {
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+  if (response.statusCode == 200) {
+    List<dynamic> json = jsonDecode(response.body);
+    print(json);
+    return json.map((userJson) => OnlineUserDetail.fromJson(userJson)).toList();
+  }
+  return [];
+}

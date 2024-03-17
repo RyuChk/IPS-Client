@@ -11,6 +11,7 @@ Future<Map<String, BuildingInfo>> getBuildingList(accessToken) async {
       'Authorization': 'Bearer $accessToken', // Add your access token here
     },
   );
+
   if (response.statusCode == 200) {
     Map<String, BuildingInfo> result = {};
     List<dynamic> data = jsonDecode(response.body);
@@ -78,3 +79,4 @@ Future<FloorDetail> getFloorDetailFromServer(
     );
   }
 }
+

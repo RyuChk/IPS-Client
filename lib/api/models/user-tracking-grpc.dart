@@ -52,3 +52,21 @@ class Coordinate {
     return Coordinate(x: json['x'], y: json['y'], z: json['z']);
   }
 }
+
+class OnlineUserDetail {
+  final String displayName;
+  // final String locationLabel;
+
+  const OnlineUserDetail({
+    required this.displayName,
+    // required this.locationLabel
+  });
+
+  factory OnlineUserDetail.fromJson(Map<String, dynamic> json) {
+    return OnlineUserDetail(
+      displayName: json['display_name'],
+      // locationLabel: json['label']
+    );
+  }
+
+}
