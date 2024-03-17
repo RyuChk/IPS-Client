@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:ipsmain/skeleton.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'authenpage.dart';
 import 'package:http/http.dart' as http;
@@ -15,8 +12,6 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage> {
   late Future<Map<String, String>> _userInfo;
-  late bool isAdmin = false;
-  late bool isCheckingRole = true;
 
   @override
   void initState() {
@@ -58,14 +53,6 @@ class _SettingPageState extends State<SettingPage> {
             transitionDuration: Duration(seconds: 0),
           ),
         );
-      }else {
-        //verified
-        //check user's role
-        Map<String, dynamic> data = json.decode(response.body);
-        dynamic groups = data['groups'];
-        if (groups is List<dynamic>) {
-          isAdmin = groups.contains("authentik Admins");
-        }
       }
     } catch (e) {
       print('Error verifying token: $e');
@@ -76,11 +63,6 @@ class _SettingPageState extends State<SettingPage> {
           transitionDuration: Duration(seconds: 0),
         ),
       );
-    }
-    finally {
-      setState(() {
-        isCheckingRole = false; // Move this line inside setState
-      });
     }
   }
 
@@ -98,166 +80,150 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (isCheckingRole){
-      return Navigator(
-        onGenerateRoute: (routeSettings) {
-          return MaterialPageRoute(builder: (context) => SkeletonPage());
-        },
-      );
-
-    } else {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color(0xff68A8E9),
-          title: Container(
-              alignment: Alignment.center,
-              child:  const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.settings, color: Colors.white),
-                  SizedBox(width: 8,),
-                  Text('Setting', style: TextStyle(
-                      fontSize: 28,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Inter'),),
-                ],
-              )
-          ),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xff68A8E9),
+        title: Container(
+          alignment: Alignment.center,
+          child:  Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FutureBuilder(
-                future: _userInfo,
-                builder: (BuildContext context,
-                    AsyncSnapshot<Map<String, String>> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('username:',
-                              style: TextStyle(
-                                  color: Color(0xff242527),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Inter'),),
-                            Text(snapshot.data!['preferred_username'] ?? '', style: const TextStyle(
+              Icon(Icons.settings, color: Colors.white),
+              SizedBox(width: 8,),
+              const Text('Setting', style: TextStyle(
+                  fontSize: 28,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Inter'),),
+            ],
+          )
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilder(
+              future: _userInfo,
+              builder: (BuildContext context,
+                  AsyncSnapshot<Map<String, String>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('username:',
+                            style: TextStyle(
                                 color: Color(0xff242527),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                                 fontFamily: 'Inter'),),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('email:',
-                              style: TextStyle(
-                                  color: Color(0xff242527),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Inter'),),
-                            Text(snapshot.data!['email'] ?? '', style: const TextStyle(
+                          Text(snapshot.data!['preferred_username'] ?? '', style: TextStyle(
+                              color: Color(0xff242527),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter'),),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('email:',
+                            style: TextStyle(
                                 color: Color(0xff242527),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                                 fontFamily: 'Inter'),),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('name:',
-                              style: TextStyle(
-                                  color: Color(0xff242527),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Inter'),),
-                            Text(snapshot.data!['name'] ?? '', style: const TextStyle(
+                          Text(snapshot.data!['email'] ?? '', style: TextStyle(
+                              color: Color(0xff242527),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter'),),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('name:',
+                            style: TextStyle(
                                 color: Color(0xff242527),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                                 fontFamily: 'Inter'),),
-                          ],
-                        ),
-                      ],
+                          Text(snapshot.data!['name'] ?? '', style: TextStyle(
+                              color: Color(0xff242527),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter'),),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
+            Spacer(),
+            Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: const Color(0xff68A8E9), //text color
+                  backgroundColor: const Color(0xffF1F1F1), //bg color
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Inter'),
+                ),
+                onPressed: () async {
+                  bool? logoutConfirmed = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Log Out'),
+                        content: Text('Are you sure logging out?'),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text('Log Out'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (logoutConfirmed == true) {
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    await prefs.clear();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => AuthenPage()),
                     );
                   }
                 },
+                child: Text('LOG OUT'),
               ),
-              Spacer(),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: const Color(0xff68A8E9), //text color
-                    backgroundColor: const Color(0xffF1F1F1), //bg color
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Inter'),
-                  ),
-                  onPressed: () async {
-                    bool? logoutConfirmed = await showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Log Out'),
-                          content: Text('Are you sure logging out?'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: Text('Log Out'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                    if (logoutConfirmed == true) {
-                      SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
-                      await prefs.clear();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => AuthenPage()),
-                      );
-                    }
-                  },
-                  child: Text('LOG OUT'),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        bottomNavigationBar: CustomNavBar.NavigationBar(
-          currentIndex: isAdmin ? 2: 1,
-          isAdmin: isAdmin,
-        ),
-      );
-  }}
-
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: SettingPage(),
-  ));
+      ),
+      bottomNavigationBar: CustomNavBar.NavigationBar(
+        currentIndex: 3,
+      ),
+    );
+  }
 }

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:http/http.dart' as http;
-import 'package:ipsmain/skeleton.dart';
 import 'package:loading_elevated_button/loading_elevated_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'mymap.dart';
@@ -127,7 +126,7 @@ class _AuthenPageState extends State<AuthenPage> {
                 'IPS Application',
                 style: TextStyle(
                     color: Color(0xff242527),
-                    fontSize: 38,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Inter'),
               ),
@@ -142,6 +141,7 @@ class _AuthenPageState extends State<AuthenPage> {
                   width: 250,
                 )),
             const SizedBox(height: 48),
+
             Container(
               alignment: Alignment.center,
               child: _isBusy
@@ -172,13 +172,13 @@ class _AuthenPageState extends State<AuthenPage> {
                   :ElevatedButton(
                 onPressed: _isBusy ? null : _signIn,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(120, 50),
+                  minimumSize: const Size(180, 72),
                   foregroundColor: const Color(0xffffffff), //text color
                   backgroundColor: const Color(0xff68A8E9), //bg color
                   padding: const EdgeInsets.symmetric(
                       horizontal: 24, vertical: 20),
                   textStyle: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Inter'),
                 ),

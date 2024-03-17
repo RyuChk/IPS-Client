@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:latlong2/latlong.dart' as latLng;
 import 'dart:math';
 
@@ -6,9 +7,6 @@ const double earthRadius = 6378137;
 double latOrigin = 13.72778;
 double lngOrigin = 100.772375;
 var origin = latLng.LatLng(latOrigin, lngOrigin);
-
-const String baseURL = 'https://bff-api.cie-ips.com';
-const String userManagerServiceBaseURL = '$baseURL/api/v1/map';
 
 class UserLocation {
   double _x;
@@ -31,15 +29,15 @@ class UserLocation {
 
   double get floor => _z;
 
-  void fetchLocation(diffX, diffY, rssiData) {
+  void fetchLocation(x, y) {
     String jsonString = '''
   {
     "x": "0",
     "y": "0",
     "z": "1",
-    "origin_lat":"13.72778",
-    "origin_lng":"100.772375",
-    "building":"CMKL",
+    "origin_lat":"13.7279936",
+    "origin_lng":"100.7782921",
+    "building":"CMKL Buidling",
     "label":"Corridor"
   }
   ''';
@@ -48,8 +46,8 @@ class UserLocation {
 
     _x = double.parse(jsonMap["x"]);
     _y = double.parse(jsonMap["y"]);
-    _x += diffX;
-    _y += diffY;
+    _x += x;
+    _y += y;
     print("current coor -> x: $_x ,y: $_y");
     _z = double.parse(jsonMap["z"]);
     latOrigin = double.parse(jsonMap["origin_lat"]);
