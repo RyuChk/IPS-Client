@@ -1,15 +1,25 @@
+import 'dart:convert';
 import 'dart:core';
+import 'dart:developer';
 import 'dart:ffi';
-
+import 'package:ipsmain/api/map.dart' as mapHandler;
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:ipsmain/api/models/user-tracking-grpc.dart';
+import 'package:ipsmain/api/user-tracking.dart';
 import 'package:ipsmain/crewlist.dart';
+import 'package:ipsmain/skeleton.dart';
 import 'package:latlong2/latlong.dart' as latLng;
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'api/models/map-grpc.dart';
+import 'authenpage.dart';
 import 'navbar.dart' as CustomNavBar;
+import 'package:http/http.dart' as http;
+
 import 'dart:math';
 
 class AdminMap extends StatefulWidget {
@@ -20,17 +30,25 @@ class AdminMap extends StatefulWidget {
 class _AdminMapState extends State<AdminMap> {
   late latLng.LatLng _center;
   late double _zoom;
+  late String verifiedToken;
   late MapController _mapController;
   late List<Marker> markerList;
-  late List<List> userList;
+  late List<OnlineUser> userList;
+  late Map<String, BuildingInfo> allBuilding;
+  late BuildingInfo buildingInfo;
+  late List<Floor> floorList = [];
+  late List<String> buildingList = [];
+  late bool isAdmin = false;
+  late bool isCheckingRole = true;
+
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _zoomController = TextEditingController();
   StreamSubscription<CompassEvent>? _compassSubscription;
 
   // Dropdown menu values
-  String selectedBuilding = 'CMKL Building';
-  String selectedFloor = '7th Floor';
+  String selectedBuilding = 'CMKL';
+  int selectedFloor = 6;
 
 
   bool isOpen = false;
@@ -38,6 +56,7 @@ class _AdminMapState extends State<AdminMap> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
 
     // Initial center coordinates and zoom level
     const start_lat = 13.7279936;
@@ -48,7 +67,9 @@ class _AdminMapState extends State<AdminMap> {
     _center = latLng.LatLng(start_lat, start_lng);
     _mapController = MapController();
     _zoom = start_zoom;
-
+    verifiedToken = '';
+    allBuilding = Map();
+    buildingList = [];
     // Set initial values for text field controllers
     _latitudeController.text = _center.latitude.toString();
     _longitudeController.text = _center.longitude.toString();
@@ -57,27 +78,94 @@ class _AdminMapState extends State<AdminMap> {
     keepUpdateUserCoordinate();
   }
 
-  void keepUpdateUserCoordinate() {
-    List<List<dynamic>> _userList = [
-      ['John', 13.7279936, 100.7782921],
-      ['Jane', 13.7279900, 100.7782921],
-      ['Doe', 13.72799110, 100.7782941],
-    ];
+  Future initializeBuildingInfo(verifiedToken) async {
+    Future<Map<String, BuildingInfo>> buildingListFuture =
+    mapHandler.getBuildingList(verifiedToken);
+    allBuilding = await buildingListFuture;
+    buildingList = allBuilding.keys.toList();
+    allBuilding.forEach((key, value) async {
+      Future<BuildingInfo> buildingInfoFuture = mapHandler.getBuildingInfo(key, verifiedToken);
+      buildingInfo = await buildingInfoFuture;
+      floorList = buildingInfo.floorList;
+    });
+  }
+
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? accessToken = prefs.getString('accessToken');
+    String? idToken = prefs.getString('idToken');
+    if (accessToken != null && idToken != null) {
+      // Token exists, proceed to verify the token
+      await _verifyToken(accessToken);
+    } else {
+      // If tokens are not available, navigate back to the authentication page
+      print("token failed 1");
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => AuthenPage(),
+          transitionDuration: Duration(seconds: 0),
+        ),
+      );
+    }
+  }
+
+  Future<void> _verifyToken(String accessToken) async {
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('https://authentik.cie-ips.com/application/o/userinfo/'),
+        headers: <String, String>{
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+      print("respy");
+      print(response);
+      if (response.statusCode != 200) {
+        // Token is not valid, navigate back to the authentication page
+        print("token failed 2");
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => AuthenPage(),
+            transitionDuration: Duration(seconds: 0),
+          ),
+        );
+      } else {
+        //verified
+        verifiedToken = accessToken;
+        await initializeBuildingInfo(accessToken);
+        Map<String, dynamic> data = json.decode(response.body);
+        dynamic groups = data['groups'];
+        if (groups is List<dynamic>) {
+          isAdmin = groups.contains("authentik Admins");
+        }
+      }
+    } catch (e) {
+      print('Error verifying token: $e');
+      // Navigate back to the authentication page in case of any errors
+      print("token failed 3");
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => AuthenPage(),
+          transitionDuration: Duration(seconds: 0),
+        ),
+      );
+    }
+    finally {
+      setState(() {
+        isCheckingRole = false; // Move this line inside setState
+      });
+    }
+  }
+
+  Future<void> keepUpdateUserCoordinate() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     Timer.periodic(Duration(seconds: 4), (timer) {
       //getCoordinate();
-
-      _userList.forEach((user) {
-        // Generate random latitude and longitude variations within the specified range
-        double latVariation = (Random().nextDouble() * 2 - 1) * 0.00002;
-        double lngVariation = (Random().nextDouble() * 2 - 1) * 0.00002;
-
-        // Apply the variations to the initial latitude and longitude
-        user[1] += latVariation;
-        user[2] += lngVariation;
-      });
-      setState(() {
-        userList = _userList;
-      });
+      getOnlineUser(selectedBuilding, selectedFloor, prefs.getString('accessToken'), 13.72785451, 100.77848733).then((onlineUser) => setState(() {
+        userList = onlineUser;
+      }));
       searchUsers();
     });
   }
@@ -90,10 +178,10 @@ class _AdminMapState extends State<AdminMap> {
     double avgLat = 0;
     double avgLng = 0;
     for (var eachUser in userList) {
-      avgLat += eachUser[1];
-      avgLng += eachUser[2];
+      avgLat += eachUser.latitude;
+      avgLng += eachUser.longitude;
     }
-    if (userList.isNotEmpty) {
+    if (userList.isEmpty) {
       avgLat = avgLat / userList.length;
       avgLng = avgLng / userList.length;
       _mapController.move(latLng.LatLng(avgLat, avgLng), 21);
@@ -102,12 +190,12 @@ class _AdminMapState extends State<AdminMap> {
     }
   }
 
-  void genUserMarker(String user, double lat, double lng) {
+  void genUserMarker(OnlineUser user) {
     markerList.add(
       Marker(
-        point: latLng.LatLng(lat, lng),
-        width: 50.0,
-        height: 50.0,
+        point: latLng.LatLng(user.latitude, user.longitude),
+        width: 100.0,
+        height: 100.0,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -117,9 +205,12 @@ class _AdminMapState extends State<AdminMap> {
               color: Colors.white, // Set the icon color to white
             ),
             Text(
-              user,
+              user.displayName,
               style: TextStyle(
-                color: Colors.white, // Set the text color to white
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Inter' // Set the text color to white
               ),
             ),
           ],
@@ -134,7 +225,8 @@ class _AdminMapState extends State<AdminMap> {
     setState(() {
       markerList.clear(); // Clear existing markers
       for (var user in userList) {
-        genUserMarker(user[0], user[1], user[2]);
+        print(user.latitude);
+        genUserMarker(user);
       }
     });
   }
@@ -170,11 +262,13 @@ class _AdminMapState extends State<AdminMap> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+
                               children: [
                                 const Icon(Icons.home_rounded,
                                   color:  Color(0xff68A8E9),),
                                 DropdownButtonHideUnderline(
-                                  child: DropdownButton2<String>(
+                                  child: DropdownButton2(
                                     isExpanded: true,
                                     value: selectedBuilding,
                                     onChanged: (String? newValue) {
@@ -183,7 +277,7 @@ class _AdminMapState extends State<AdminMap> {
                                       });
                                     },
                                     buttonStyleData: const ButtonStyleData(
-                                      width: 170,
+                                      width: 150,
                                       padding: EdgeInsets.only(left: 14, right: 14),
                                       elevation: 2,
                                     ),
@@ -195,72 +289,98 @@ class _AdminMapState extends State<AdminMap> {
                                       iconEnabledColor: Color(0xff242527),
                                     ),
                                     dropdownStyleData: DropdownStyleData(
+                                      width: 130,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
-                                      offset: const Offset(-20, 0),
+                                      offset: const Offset(0, 0),
                                       scrollbarTheme: ScrollbarThemeData(
                                         radius: const Radius.circular(40),
                                         thickness: MaterialStateProperty.all(6),
                                         thumbVisibility: MaterialStateProperty.all(true),
                                       ),
                                     ),
-                                    items: <String>[
-                                      'E12 Building',
-                                      'CMKL Building',
-                                      'HM Building'
-                                    ].map<DropdownMenuItem<String>>((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value),
-                                      );
-                                    }).toList(),
+                                    items: buildingList.map<DropdownMenuItem<String>>((String value) {
+      return DropdownMenuItem<String>(
+        value: value,
+        child: Text(value),
+      );
+    }).toList(),
                                   ),
                                 ),
                               ],
                             ),
-                            DropdownButtonHideUnderline(
-                                child: DropdownButton2<String>(
-                                  isExpanded: true,
-                                  value: selectedFloor,
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      selectedFloor = newValue!;
-                                    });
-                                  },
-                                  buttonStyleData: const ButtonStyleData(
-                                    width: 130,
-                                    padding: EdgeInsets.only(left: 14, right: 14),
-                                    elevation: 2,
-                                  ),
-                                  iconStyleData: const IconStyleData(
-                                    icon: Icon(
-                                      Icons.arrow_drop_down_rounded,
-                                    ),
-                                    iconSize: 30,
-                                    iconEnabledColor: Color(0xff242527),
-                                  ),
-                                  dropdownStyleData: DropdownStyleData(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    offset: const Offset(-10, 0),
-                                    scrollbarTheme: ScrollbarThemeData(
-                                      radius: const Radius.circular(40),
-                                      thickness: MaterialStateProperty.all(6),
-                                      thumbVisibility: MaterialStateProperty.all(true),
-                                    ),
-                                  ),
-                                  items: <String>[
-                                    '6th Floor',
-                                    '7th Floor',
-                                  ].map<DropdownMenuItem<String>>((String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Builder(builder: (context) {
+                                  if (selectedFloor.toString() != ''){
+                                    return Text(
+                                      'Floor',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 16,
+                                        color: Color(0xff242527),
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     );
-                                  }).toList(),
-                                ))
+                                }
+                                    return Text(
+                                      '',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 16,
+                                        color: Color(0xff242527),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    );
+
+
+            }),
+
+                                DropdownButtonHideUnderline(
+                                    child: DropdownButton2<String>(
+                                      isExpanded: true,
+                                      value: selectedFloor.toString(),
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          selectedFloor = int.parse(newValue!);
+                                        });
+                                      },
+                                      buttonStyleData: const ButtonStyleData(
+                                        width: 70,
+                                        padding: EdgeInsets.only(left: 14, right: 14),
+                                        elevation: 2,
+                                      ),
+                                      iconStyleData: const IconStyleData(
+                                        icon: Icon(
+                                          Icons.arrow_drop_down_rounded,
+                                        ),
+                                        iconSize: 30,
+                                        iconEnabledColor: Color(0xff242527),
+                                      ),
+                                      dropdownStyleData: DropdownStyleData(
+                                        width: 45,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        offset: const Offset(0, 0),
+                                        scrollbarTheme: ScrollbarThemeData(
+                                          radius: const Radius.circular(40),
+                                          thickness: MaterialStateProperty.all(6),
+                                          thumbVisibility: MaterialStateProperty.all(true),
+                                        ),
+                                      ),
+                                      items: floorList.map<DropdownMenuItem<String>>((value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value.floor.toString(),
+                                          child: Text(value.floor.toString()),
+                                        );
+                                      }).toList(),
+                                    ))
+                              ],
+                            ),
+
                           ],
                         )
                       ),
@@ -270,6 +390,13 @@ class _AdminMapState extends State<AdminMap> {
 
   @override
   Widget build(BuildContext context) {
+    if (isCheckingRole){
+      return Navigator(
+        onGenerateRoute: (routeSettings) {
+          return MaterialPageRoute(builder: (context) => SkeletonPage());
+        },
+      );
+    } else {
     return Scaffold(
       appBar: null,
       body: Stack(
@@ -286,8 +413,8 @@ class _AdminMapState extends State<AdminMap> {
                   children: [
                     TileLayer(
                       urlTemplate:
-                      selectedFloor == '6th Floor' ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnawp1e01ll01pj0akv7ofx/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg':
-                      selectedFloor == '7th Floor' ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnap3la00n501pka0jc9uji/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg'
+                      selectedFloor == 6 ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnawp1e01ll01pj0akv7ofx/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg':
+                      selectedFloor == 7 ? 'https://api.mapbox.com/styles/v1/kl63011179/cltnap3la00n501pka0jc9uji/tiles/{z}/{x}/{y}?access_token=pk.eyJ1Ijoia2w2MzAxMTE3OSIsImEiOiJjbHQwYmlwZzMweG0wMnFud3V6YzBnMzVxIn0.obh5q2t-Ppzi0VepoBICYg'
                     : '',
 
                       additionalOptions: {
@@ -304,7 +431,7 @@ class _AdminMapState extends State<AdminMap> {
             ],
           ),
           Positioned(
-            top: 20,
+            top: 45,
             left: 0,
             right: 0,
             child: _appBar,
@@ -334,17 +461,9 @@ class _AdminMapState extends State<AdminMap> {
                     color: const Color(0xff68A8E9),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  offset: const Offset(-12, 210),
+                  offset: const Offset(-12, 165),
                 ),
                 items: const[
-                  DropdownMenuItem(
-                      value: 'searchUsers',
-                      child: Icon(
-                          color: Colors.white,
-                        Icons.search,
-                      )
-
-                    ),
                   DropdownMenuItem(
                       value: 'focusCenter',
                       child: Icon(
@@ -363,9 +482,6 @@ class _AdminMapState extends State<AdminMap> {
                 ],
                 onChanged: (value) {
                   switch (value) {
-                    case 'searchUsers':
-                      searchUsers();
-                      break;
                     case 'focusCenter':
                       focusCenter();
                       break;
@@ -387,10 +503,10 @@ class _AdminMapState extends State<AdminMap> {
       ),
       bottomNavigationBar: CustomNavBar.NavigationBar(
         currentIndex: 1,
-        permission: 'admin',
+        isAdmin: isAdmin,
       ),
     );
-  }
+  }}
 
 
   @override

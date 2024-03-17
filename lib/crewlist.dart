@@ -1,12 +1,15 @@
+import 'dart:async';
+
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:ipsmain/api/models/user-tracking-grpc.dart';
+import 'package:ipsmain/api/user-tracking.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'adminmap.dart';
 import 'authenpage.dart';
 import 'navbar.dart' as CustomNavBar;
 import 'package:http/http.dart' as http;
-
 
 class CrewList extends StatefulWidget {
   @override
@@ -14,14 +17,14 @@ class CrewList extends StatefulWidget {
 }
 
 class _CrewListState extends State<CrewList> {
-  late Future<Map<String, String>> _userInfo;
-  
-  
+  late String? username;
+  late String? accessToken;
+  late List<OnlineUserDetail> userLists = [];
+
   @override
   void initState() {
     super.initState();
     _checkLoginStatus();
-    _userInfo = _getUserInfo();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -70,21 +73,17 @@ class _CrewListState extends State<CrewList> {
     }
   }
 
-  Future<Map<String, String>> _getUserInfo() async {
+  Future<void> keepUpdateUserCoordinate() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? username = prefs.getString('preferred_username') ?? 'Unknown';
-    String? email = prefs.getString('email') ?? 'Unknown';
-    String? nickname = prefs.getString('name') ?? 'Unknown';
-    return {
-      'preferred_username': username,
-      'email': email,
-      'name': nickname,
-    };
+    Timer.periodic(Duration(seconds: 4), (timer) {
+      //getAllOnlineUsers();
+      getAllOnlineUsers(prefs.getString('accessToken')!)
+          .then((onlineUser) => setState(() {
+                userLists = onlineUser;
+              }));
+    });
   }
 
-  //dummy crews
-  List<String> crews = ['1','2','3','4'];
-  
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xffF1F1F1),
@@ -92,112 +91,133 @@ class _CrewListState extends State<CrewList> {
         backgroundColor: const Color(0xff68A8E9),
         title: Container(
             alignment: Alignment.center,
-            child:  Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.people_alt_rounded, color: Colors.white),
-                SizedBox(width: 8,),
-                const Text('Overview', style: TextStyle(
-                    fontSize: 28,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Inter'),),
+                SizedBox(
+                  width: 8,
+                ),
+                const Text(
+                  'Overview',
+                  style: TextStyle(
+                      fontSize: 28,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Inter'),
+                ),
               ],
-            )
-        ),
+            )),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FutureBuilder(future: _userInfo,
-                  builder: (BuildContext context, AsyncSnapshot<Map<String, String>> snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting){
-                      return Center(child: CircularProgressIndicator(),);
-                    }else if (snapshot.hasError){
-                      return Center(child: Text('Error: ${snapshot.error}'));
-
-                    }else{
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // loop for list all crews here
-                          for ( var i in crews ) Column(
+          child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: userLists.length > 0
+                  ? (Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(height: 8,),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color(0x50D5D8DC),
-                                      spreadRadius: 5,
-                                      blurRadius: 7,
-                                      offset: Offset(0, 3), // changes position of shadow
-                                    ),
-                                  ],
-                                ) ,
-                                child: Row(
+                              // loop for list all crews here
+                              // for ( var i in userLists )
+                              for (var i = 0; i < 5; i++)
+                                Column(
                                   children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: const Color(0xff68A8E9),
-                                      ),
-                                      width: 44,
-                                      height: 44,
+                                    SizedBox(
+                                      height: 8,
                                     ),
-                                    SizedBox(width: 10,),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(snapshot.data!['name'] ?? '',
-                                            style: TextStyle(
-                                                color: Color(0xff242527),
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                fontFamily: 'Inter')),
-                                        Row(
-                                          children: [
-                                            Text('position:',
-                                                style: TextStyle(
-                                                    color: Color(0xff242527),
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w500,
-                                                    fontFamily: 'Inter')),
-                                            SizedBox(width: 8,),
-                                            Text('room A231',
-                                                style: TextStyle(
-                                                    color: Color(0xff242527),
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w500,
-                                                    fontFamily: 'Inter')),
-                                          ],
-                                        )
-
-                                      ],
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(12)),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Color(0x50D5D8DC),
+                                            spreadRadius: 5,
+                                            blurRadius: 7,
+                                            offset: Offset(0,
+                                                3), // changes position of shadow
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: const Color(0xff68A8E9),
+                                            ),
+                                            width: 44,
+                                            height: 44,
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                  'rr' ??
+                                                      '', //Todo: display name
+                                                  style: TextStyle(
+                                                      color: Color(0xff242527),
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily: 'Inter')),
+                                              Row(
+                                                children: [
+                                                  Text('location:',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Color(0xff242527),
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontFamily: 'Inter')),
+                                                  SizedBox(
+                                                    width: 8,
+                                                  ),
+                                                  Text(
+                                                      'qq' ??
+                                                          '', //Todo: location label
+                                                      style: TextStyle(
+                                                          color:
+                                                              Color(0xff242527),
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontFamily: 'Inter')),
+                                                ],
+                                              )
+                                            ],
+                                          )
+                                        ],
+                                      ),
                                     )
-
                                   ],
                                 ),
-                              )
                             ],
-                          ),
-
-
-                        ],
-                      );
-                    }
-                  }
-              )
-            ],
-          ),
-        ),
-      ),
+                          )
+                        ]))
+                  : Column(children: [
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Center(
+                        child: Text('none of online user now',
+                            style: TextStyle(
+                                color: Color(0xff242527),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Inter')),
+                      ),
+                    ]))),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -214,12 +234,13 @@ class _CrewListState extends State<CrewList> {
             },
             tooltip: 'Map',
             backgroundColor: const Color(0xff68A8E9), //bg color
-            child: const Icon(Icons.map_outlined, color: Colors.white,  size: 32,),
+            child: const Icon(
+              Icons.map_outlined,
+              color: Colors.white,
+              size: 32,
+            ),
           ),
         ],
-      ),
-      bottomNavigationBar: CustomNavBar.NavigationBar(
-        currentIndex: 1,
       ),
     );
   }
